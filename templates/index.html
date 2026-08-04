@@ -9,6 +9,11 @@
 </head>
 <body>
 
+    <!-- Top Right Login Button -->
+    <button id="topLoginBtn" class="top-login-btn">
+        <i class="ph ph-sign-in"></i> Admin
+    </button>
+
     <div id="toast-container"></div>
 
     <div class="card">
@@ -35,7 +40,7 @@
                         <select id="section" name="section" required>
                             <option value="" disabled selected>Select...</option>
                             <option value="BSIT2-3">BSIT2-3</option>
-                            <option value="BSIT2-6">BSIT2-6</option> <!-- NEW SECTION ADDED -->
+                            <option value="BSIT2-6">BSIT2-6</option>
                             <option value="BSIT2-11">BSIT2-11</option>
                             <option value="BSIT2-12">BSIT2-12</option>
                         </select>
@@ -115,13 +120,67 @@
         </div>
     </div>
 
+    <!-- Admin Login Modal -->
+    <div id="adminLoginModal" class="login-modal-overlay">
+        <div class="login-modal-content">
+            <button class="login-close-btn" id="closeLoginModal"><i class="ph ph-x"></i></button>
+            <div class="header" style="margin-bottom: 25px;">
+                <h2 style="font-size: 20px; color: #fafafa; margin-bottom: 5px;">Admin Access</h2>
+                <p style="font-size: 13px; color: #a1a1aa;">Enter credentials to proceed</p>
+            </div>
+            <form id="adminLoginForm">
+                <div class="form-group">
+                    <label for="adminUsername">Username</label>
+                    <div class="input-wrapper">
+                        <i class="ph ph-user"></i>
+                        <input type="text" id="adminUsername" required placeholder="Enter username">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="adminPassword">Password</label>
+                    <div class="input-wrapper">
+                        <i class="ph ph-lock-key"></i>
+                        <input type="password" id="adminPassword" required placeholder="Enter password">
+                    </div>
+                </div>
+                <button type="submit" class="btn-submit" style="margin-top: 20px;">
+                    <span class="btn-text">Login</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Upload Modal -->
+    <div id="adminUploadModal" class="login-modal-overlay">
+        <div class="login-modal-content">
+            <button class="login-close-btn" id="closeUploadModal"><i class="ph ph-x"></i></button>
+            <div class="header" style="margin-bottom: 25px;">
+                <div class="logo-placeholder" style="width: 40px; height: 40px; font-size: 20px; margin-bottom: 10px;"><i class="ph-fill ph-file-xls"></i></div>
+                <h2 style="font-size: 20px; color: #fafafa; margin-bottom: 5px;">Update Records</h2>
+                <p style="font-size: 13px; color: #a1a1aa;">Upload the latest Grades.xlsx file</p>
+            </div>
+            <form id="adminUploadForm">
+                <div class="form-group">
+                    <div class="file-upload-wrapper">
+                        <input type="file" id="excelFile" accept=".xlsx" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn-submit" id="uploadBtn" style="margin-top: 20px;">
+                    <span class="btn-text">Upload Grades</span>
+                    <div class="loader" id="uploadLoader" style="display: none;"></div>
+                </button>
+            </form>
+        </div>
+    </div>
+
     <script>
         function showToast(message, type = 'error') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
-            toast.className = `toast toast-${type}`;
+            // Adding a dynamic class based on the type (success/error)
+            toast.className = `toast ${type === 'success' ? 'toast-success' : 'toast-error'}`;
             
-            const icon = type === 'error' ? '<i class="ph-fill ph-warning-circle"></i>' : '<i class="ph-fill ph-info"></i>';
+            const icon = type === 'error' ? '<i class="ph-fill ph-warning-circle"></i>' : '<i class="ph-fill ph-check-circle"></i>';
             toast.innerHTML = `${icon} <span>${message}</span>`;
             
             container.appendChild(toast);
@@ -132,6 +191,7 @@
             }, 4000);
         }
 
+        // --- Student Query Form Logic ---
         document.getElementById('entryForm').addEventListener('submit', function(e) {
             e.preventDefault(); 
             
@@ -159,10 +219,8 @@
             .then(response => response.json())
             .then(result => {
                 if (result.success) {
-                    // Populate Profile Header
                     document.getElementById('modalStudentName').textContent = result.student_name;
                     document.getElementById('modalStudentId').textContent = `ID Number: ${result.id_number}`;
-                    // Added Teacher to the header metadata
                     document.getElementById('modalCourseInfo').textContent = `${result.subject_full} • ${result.section} • Term ${result.period} • Prof. ${result.teacher}`;
                     
                     const container = document.getElementById('gradesContainer');
@@ -172,7 +230,6 @@
                     let row2 = '<tr>';
                     let row3 = '<tr class="data-row">';
 
-                    // Build table columns dynamically 
                     if(result.modules_data.length === 0) {
                         row1 += `<th class="header-cat-title header-main">No Data Available</th>`;
                         row2 += `<th class="header-main">-</th>`;
@@ -213,14 +270,110 @@
             });
         });
 
+        // Close Data Modal
         document.querySelector('.close-btn').addEventListener('click', () => {
             document.getElementById('gradeModal').style.display = 'none';
         });
-        window.addEventListener('click', (e) => {
-            const modal = document.getElementById('gradeModal');
-            if (e.target === modal) {
-                modal.style.display = 'none';
+
+        // --- Admin Logic ---
+        const topLoginBtn = document.getElementById('topLoginBtn');
+        const adminLoginModal = document.getElementById('adminLoginModal');
+        const closeLoginModal = document.getElementById('closeLoginModal');
+        const adminLoginForm = document.getElementById('adminLoginForm');
+        const adminUploadModal = document.getElementById('adminUploadModal');
+        const closeUploadModal = document.getElementById('closeUploadModal');
+        const adminUploadForm = document.getElementById('adminUploadForm');
+
+        // Open Login Modal
+        topLoginBtn.addEventListener('click', () => {
+            adminLoginModal.style.display = 'flex';
+        });
+
+        // Close Login Modal
+        closeLoginModal.addEventListener('click', () => {
+            adminLoginModal.style.display = 'none';
+        });
+
+        // Close Upload Modal
+        closeUploadModal.addEventListener('click', () => {
+            adminUploadModal.style.display = 'none';
+        });
+
+        // Handle Login Submission
+        adminLoginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const user = document.getElementById('adminUsername').value;
+            const pass = document.getElementById('adminPassword').value;
+
+            if (user === 'admin' && pass === 'admin123') {
+                showToast('Login successful! Welcome Admin.', 'success');
+                adminLoginModal.style.display = 'none';
+                adminLoginForm.reset();
+                
+                // Show the upload modal upon successful login
+                setTimeout(() => {
+                    adminUploadModal.style.display = 'flex';
+                }, 300); 
+                
+            } else {
+                showToast('Invalid username or password.', 'error');
             }
+        });
+
+        // Handle Excel Upload Submission
+        adminUploadForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const fileInput = document.getElementById('excelFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showToast('Please select a file first.', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const btn = document.getElementById('uploadBtn');
+            const btnText = btn.querySelector('.btn-text');
+            const loader = document.getElementById('uploadLoader');
+
+            btn.disabled = true;
+            btnText.style.opacity = '0.5';
+            loader.style.display = 'block';
+
+            // Send to backend
+            fetch('/upload_excel', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    adminUploadModal.style.display = 'none';
+                    adminUploadForm.reset();
+                } else {
+                    showToast(result.message, 'error');
+                }
+            })
+            .catch(err => {
+                console.error('Upload Error:', err);
+                showToast('Failed to upload file. Please check your connection.', 'error');
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btnText.style.opacity = '1';
+                loader.style.display = 'none';
+            });
+        });
+
+        // Close Modals if clicked outside
+        window.addEventListener('click', (e) => {
+            const gradeModal = document.getElementById('gradeModal');
+            if (e.target === gradeModal) gradeModal.style.display = 'none';
+            if (e.target === adminLoginModal) adminLoginModal.style.display = 'none';
+            if (e.target === adminUploadModal) adminUploadModal.style.display = 'none';
         });
     </script>
 </body>

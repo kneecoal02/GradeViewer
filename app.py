@@ -142,5 +142,26 @@ def get_grades():
     except Exception as e:
         return jsonify({'success': False, 'message': f'Server Exception: {str(e)}'}), 500
 
+@app.route('/upload_excel', methods=['POST'])
+def upload_excel():
+    # Check if a file is part of the request
+    if 'file' not in request.files:
+        return jsonify({'success': False, 'message': 'No file part in the request.'}), 400
+    
+    file = request.files['file']
+    
+    if file.filename == '':
+        return jsonify({'success': False, 'message': 'No file selected for uploading.'}), 400
+        
+    if file and file.filename.endswith('.xlsx'):
+        try:
+            # Save and overwrite Grades.xlsx verbatim
+            file.save(EXCEL_FILE)
+            return jsonify({'success': True, 'message': 'Database updated: Grades.xlsx saved successfully.'})
+        except Exception as e:
+            return jsonify({'success': False, 'message': f'Failed to save file: {str(e)}'}), 500
+    else:
+        return jsonify({'success': False, 'message': 'Invalid file format. Please upload an .xlsx file.'}), 400
+
 if __name__ == '__main__':
     app.run(debug=True)

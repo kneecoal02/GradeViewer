@@ -244,3 +244,127 @@ input::placeholder { color: #52525b; }
 
 .text-bold { font-weight: 600; color: #fafafa !important; }
 .highlight-grade { font-size: 16px !important; color: #818cf8 !important; }
+/* ---------------------------------------------------
+   Top Login Button & Modal
+------------------------------------------------------ */
+.top-login-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(24, 24, 27, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #e4e4e7;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(8px);
+    z-index: 100;
+}
+
+.top-login-btn:hover {
+    background: rgba(39, 39, 42, 0.9);
+    border-color: #6366f1;
+}
+
+.login-modal-overlay {
+    display: none; 
+    position: fixed; 
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.6); 
+    backdrop-filter: blur(4px); 
+    -webkit-backdrop-filter: blur(4px);
+    justify-content: center; 
+    align-items: center; 
+    z-index: 1001; 
+    padding: 20px;
+}
+
+.login-modal-content {
+    background-color: #18181b; 
+    border: 1px solid #27272a; 
+    padding: 30px;
+    border-radius: 16px; 
+    width: 100%; 
+    max-width: 350px; 
+    position: relative; 
+    animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8);
+}
+
+.login-close-btn {
+    position: absolute; 
+    top: 15px; 
+    right: 15px; 
+    background: none; 
+    border: none;
+    color: #71717a; 
+    font-size: 20px; 
+    cursor: pointer; 
+    transition: color 0.2s ease;
+}
+.login-close-btn:hover { color: #f4f4f5; }
+
+/* Password Input Styling (Matches text input) */
+input[type="password"] {
+    width: 100%;
+    padding: 12px 14px 12px 42px;
+    font-size: 14px; font-family: inherit;
+    color: #f4f4f5; background-color: #18181b;
+    border: 1px solid #3f3f46; border-radius: 10px;
+    transition: all 0.2s ease; appearance: none;
+}
+
+input[type="password"]:focus {
+    outline: none; border-color: #6366f1;
+    background-color: #27272a; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+}
+
+/* Success Toast Styling */
+.toast-success {
+    border-left: 4px solid #10b981;
+}
+.toast-success i {
+    color: #10b981;
+}
+/* ---------------------------------------------------
+   File Upload Specifics
+------------------------------------------------------ */
+.file-upload-wrapper {
+    border: 1px dashed #3f3f46; 
+    border-radius: 10px; 
+    padding: 20px; 
+    text-align: center; 
+    background: #18181b;
+}
+
+input[type="file"] {
+    width: 100%;
+    color: #a1a1aa;
+    font-size: 13px;
+    font-family: inherit;
+}
+
+/* Style the default "Choose File" button */
+input[type="file"]::file-selector-button {
+    background: #27272a;
+    border: 1px solid #3f3f46;
+    color: #f4f4f5;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-right: 15px;
+    font-family: inherit;
+    font-size: 13px;
+}
+
+input[type="file"]::file-selector-button:hover {
+    background: #3f3f46;
+    border-color: #6366f1;
+}
