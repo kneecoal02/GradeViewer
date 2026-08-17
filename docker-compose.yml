@@ -1,0 +1,18 @@
+services:
+  backend:
+    container_name: grade_viewer
+
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    ports:
+      - "8010:8010"
+
+    volumes:
+      - .:/app
+
+    # env_file:
+    #   - ./backend/.env
+
+    restart: unless-stopped
