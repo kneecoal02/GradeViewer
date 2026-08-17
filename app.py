@@ -31,9 +31,7 @@ def get_grades():
     data = request.get_json()
     access_code = str(data.get('accessCode')).strip()
     section = data.get('section')
-    period = data.get('period')
     subject = data.get('subject')
-    teacher = data.get('teacher')
 
     sheet_name = f"{subject}({section})"
 
@@ -50,92 +48,120 @@ def get_grades():
         if student_row.empty:
             return jsonify({'success': False, 'message': f'Access code not found in {section}. Please verify.'}), 404
 
-        if period == 'P1':
-            categories_config = [
-                {
-                    'name': 'SOC 1 & 2',
-                    'class_type': 'soc',
-                    'columns': ['C','D','E','F','G','H','I','J','K','L','M','N','O','P']
-                },
-                {
-                    'name': "Let's Practice",
-                    'class_type': 'practice',
-                    'columns': ['Q','R','S','T','U','V','W','X','Y','Z','AA','AB','AC','AD']
-                },
-                {
-                    'name': 'Reflection',
-                    'class_type': 'reflection',
-                    'columns': ['AE','AF','AG','AH','AI','AJ','AK','AL','AM','AN','AO','AP','AQ','AR']
-                },
-                {
-                    'name': 'Wrap Up Quiz',
-                    'class_type': 'wrapup',
-                    'columns': ['AS','AT','AU','AV','AW','AX','AY','AZ','BA','BB','BC','BD','BE','BF']
-                }
-            ]
+        # Full column mapping including the newly added check-ins
+        categories_config = [
+            {
+                'name': 'SOC 1 & 2',
+                'class_type': 'soc',
+                'columns': ['D','E','F','G','H','I','J','K','L','M','N','O','P','Q']
+            },
+            {
+                'name': "Let's Practice",
+                'class_type': 'practice',
+                'columns': ['R','S','T','U','V','W','X','Y','Z','AA','AB','AC','AD','AE']
+            },
+            {
+                'name': 'Reflection',
+                'class_type': 'reflection',
+                'columns': ['AF','AG','AH','AI','AJ','AK','AL','AM','AN','AO','AP','AQ','AR','AS']
+            },
+            {
+                'name': 'Wrap Up Quiz',
+                'class_type': 'wrapup',
+                'columns': ['AT','AU','AV','AW','AX','AY','AZ','BA','BB','BC','BD','BE','BF','BG']
+            },
+            {
+                'name': 'Assessments & Outputs',
+                'class_type': 'assessments',
+                'columns': ['BH', 'BI', 'BJ', 'BK', 'BL', 'BM', 'BN'],
+                'headers': ['P1 Check-in', 'P2 Check-in', 'P3.1 Check-in', 'P3.2 Check-in', 'Check-in Avg', 'Final Output', 'Overall Grade']
+            }
+        ]
 
-            # Extract Student Name (Col C / Index 2)
-            student_name = "N/A"
-            c_idx = col_to_index('C')
-            if c_idx < len(df.columns):
-                val = student_row.iloc[0, c_idx]
-                student_name = "N/A" if pd.isna(val) or str(val).strip() == "" else str(val)
-            
-            # Extract P1 Final Grade (Col BG)
-            final_grade = "N/A"
-            bg_idx = col_to_index('BG')
-            if bg_idx < len(df.columns):
-                val = student_row.iloc[0, bg_idx]
-                if isinstance(val, float) and val.is_integer():
-                    val = int(val)
-                final_grade = "N/A" if pd.isna(val) or str(val).strip() == "" else str(val)
-
-            # Process Modules
-            modules_data = []
-            for cat in categories_config:
-                cat_items = []
-                for i, col_letter in enumerate(cat['columns'], start=1):
-                    col_idx = col_to_index(col_letter)
-                    if col_idx < len(df.columns):
-                        val = student_row.iloc[0, col_idx]
-                        
-                        if pd.isna(val) or str(val).strip() == "":
-                            continue
-                        
-                        if isinstance(val, float) and val.is_integer():
-                            val = int(val)
+        # Extract Student Name (Col C / Index 2)
+        student_name = "N/A"
+        c_idx = col_to_index('C')
+        if c_idx < len(df.columns):
+            val = student_row.iloc[0, c_idx]
+            student_name = "N/A" if pd.isna(val) or str(val).strip() == "" else str(val)
+        
+        # Extract Available Modules & Check-ins dynamically
+        modules_data = []
+        for cat in categories_config:
+            cat_items = []
+            for i, col_letter in enumerate(cat['columns']):
+                col_idx = col_to_index(col_letter)
+                if col_idx < len(df.columns):
+                    val = student_row.iloc[0, col_idx]
+                    
+                    # If empty or NaN, skip it entirely
+                    if pd.isna(val) or str(val).strip() == "":
+                        continue
+                    
+                    # Special logic for Wrap Up Quiz to convert percentage to raw score out of 7
+                    if cat['class_type'] == 'wrapup':
+                        try:
+                            numeric_val = float(val)
+                            val = str(round((numeric_val * 7) / 100))
+                        except ValueError:
+                            val = str(val)
+                    else:
+                        # Clean up floats (round decimals to 2 places to handle calculated averages neatly)
+                        if isinstance(val, float):
+                            if val.is_integer():
+                                val = int(val)
+                            else:
+                                val = round(val, 2)
                         val = str(val)
-                        
-                        cat_items.append({
-                            'column': col_letter,
-                            'sub_header': f'Mod {i}',
-                            'value': val
-                        })
-                
-                if cat_items:
-                    modules_data.append({
-                        'category_name': cat['name'],
-                        'class_type': cat['class_type'],
-                        'items': cat_items
+                    
+                    # Use custom headers if provided (for check-ins), otherwise use "Mod X"
+                    if 'headers' in cat:
+                        sub_header = cat['headers'][i]
+                    else:
+                        sub_header = f'Mod {i+1}'
+
+                    cat_items.append({
+                        'column': col_letter,
+                        'sub_header': sub_header,
+                        'value': val
+                    })
+            
+            # Only add category if there are modules with values
+            if cat_items:
+                modules_data.append({
+                    'category_name': cat['name'],
+                    'class_type': cat['class_type'],
+                    'items': cat_items
+                })
+
+        # Extract Final Grades (Shifted to BO, BP, BQ)
+        final_grades = []
+        for col_letter, title in [('BO', 'P1 Grade'), ('BP', 'P2 Grade'), ('BQ', 'Final Grade')]:
+            idx = col_to_index(col_letter)
+            if idx < len(df.columns):
+                val = student_row.iloc[0, idx]
+                if not pd.isna(val) and str(val).strip() != "":
+                    if isinstance(val, float):
+                        if val.is_integer():
+                            val = int(val)
+                        else:
+                            val = round(val, 2)
+                    final_grades.append({
+                        'title': title,
+                        'value': str(val)
                     })
 
-            # Get full descriptive title
-            subject_title = SUBJECT_TITLES.get(subject, "Course Module")
+        # Get full descriptive title
+        subject_title = SUBJECT_TITLES.get(subject, "Course Module")
 
-            return jsonify({
-                'success': True,
-                'period': period,
-                'student_name': student_name,
-                'access_code': access_code,
-                'section': section,
-                'subject_full': f"{subject} - {subject_title}",
-                'teacher': teacher,
-                'final_grade': final_grade,
-                'modules_data': modules_data
-            })
-        
-        elif period in ['P2', 'P3']:
-            return jsonify({'success': False, 'message': f'Grade matrix for {period} is currently locked.'}), 400
+        return jsonify({
+            'success': True,
+            'student_name': student_name,
+            'section': section,
+            'subject_full': f"{subject} - {subject_title}",
+            'final_grades': final_grades,
+            'modules_data': modules_data
+        })
 
     except ValueError:
         return jsonify({'success': False, 'message': f'Course section "{sheet_name}" does not exist in the registry.'}), 404

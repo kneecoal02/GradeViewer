@@ -48,21 +48,6 @@
                 </div>
 
                 <div class="form-group half">
-                    <label for="period">Term</label>
-                    <div class="input-wrapper">
-                        <i class="ph ph-calendar-blank"></i>
-                        <select id="period" name="period" required>
-                            <option value="" disabled selected>Select...</option>
-                            <option value="P1">P1</option>
-                            <option value="P2">P2</option>
-                            <option value="P3">P3</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group half">
                     <label for="subject">Course Subject</label>
                     <div class="input-wrapper">
                         <i class="ph ph-book-bookmark"></i>
@@ -71,18 +56,6 @@
                             <option value="ITE 300">ITE 300</option>
                             <option value="ITE 298">ITE 298</option>
                             <option value="ITE 031">ITE 031</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-group half">
-                    <label for="teacher">Instructor</label>
-                    <div class="input-wrapper">
-                        <i class="ph ph-chalkboard-teacher"></i>
-                        <select id="teacher" name="teacher" required>
-                            <option value="" disabled selected>Select...</option>
-                            <option value="Kurt Ellie R. Parel">Kurt Ellie R. Parel</option>
-                            <option value="Nicole Lampa">Nicole Lampa</option>
                         </select>
                     </div>
                 </div>
@@ -105,7 +78,6 @@
                     <div class="profile-avatar"><i class="ph-fill ph-user"></i></div>
                     <div class="profile-details">
                         <h2 id="modalStudentName">Loading...</h2>
-                        <p id="modalStudentCode">Code: Loading...</p>
                     </div>
                 </div>
                 <div class="meta-section">
@@ -205,9 +177,7 @@
             const payload = {
                 accessCode: document.getElementById('accessCode').value,
                 section: document.getElementById('section').value,
-                period: document.getElementById('period').value,
-                subject: document.getElementById('subject').value,
-                teacher: document.getElementById('teacher').value 
+                subject: document.getElementById('subject').value
             };
 
             fetch('/get_grades', {
@@ -219,8 +189,7 @@
             .then(result => {
                 if (result.success) {
                     document.getElementById('modalStudentName').textContent = result.student_name;
-                    document.getElementById('modalStudentCode').textContent = `Access Code: ${result.access_code}`;
-                    document.getElementById('modalCourseInfo').textContent = `${result.subject_full} • ${result.section} • Term ${result.period} • Prof. ${result.teacher}`;
+                    document.getElementById('modalCourseInfo').textContent = `${result.subject_full} • ${result.section}`;
                     
                     const container = document.getElementById('gradesContainer');
                     let elementsTable = '<div class="table-scroll-wrapper"><table class="grades-table-horizontal">';
@@ -229,11 +198,13 @@
                     let row2 = '<tr>';
                     let row3 = '<tr class="data-row">';
 
-                    if(result.modules_data.length === 0) {
+                    // Check if everything is completely empty
+                    if(result.modules_data.length === 0 && result.final_grades.length === 0) {
                         row1 += `<th class="header-cat-title header-main">No Data Available</th>`;
                         row2 += `<th class="header-main">-</th>`;
                         row3 += `<td>-</td>`;
                     } else {
+                        // Render dynamically discovered module columns
                         result.modules_data.forEach(cat => {
                             row1 += `<th colspan="${cat.items.length}" class="header-cat-title header-${cat.class_type}">${cat.category_name}</th>`;
                             
@@ -242,12 +213,16 @@
                                 row3 += `<td><div class="grade-cell">${item.value}</div></td>`;
                             });
                         });
+
+                        // Render dynamically discovered final grade columns
+                        result.final_grades.forEach(fg => {
+                            row1 += `<th rowspan="2" class="header-main sticky-col-right" style="min-width: 90px">${fg.title}</th>`;
+                            row3 += `<td class="text-bold sticky-col-right highlight-grade">${fg.value}</td>`;
+                        });
                     }
 
-                    row1 += `<th rowspan="2" class="header-main sticky-col-right">Final Grade</th>`;
                     row1 += '</tr>';
                     row2 += '</tr>';
-                    row3 += `<td class="text-bold sticky-col-right highlight-grade">${result.final_grade}</td>`;
                     row3 += '</tr>';
                     
                     elementsTable += row1 + row2 + row3 + '</table></div>';
