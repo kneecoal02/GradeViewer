@@ -25,10 +25,10 @@
 
         <form id="entryForm">
             <div class="form-group">
-                <label for="idNumber">Student ID</label>
+                <label for="accessCode">Access Code</label>
                 <div class="input-wrapper">
-                    <i class="ph ph-identification-card"></i>
-                    <input type="text" id="idNumber" name="idNumber" placeholder="e.g. 2024-00123" required>
+                    <i class="ph ph-key"></i>
+                    <input type="text" id="accessCode" name="accessCode" placeholder="Enter unique access code" required>
                 </div>
             </div>
 
@@ -105,7 +105,7 @@
                     <div class="profile-avatar"><i class="ph-fill ph-user"></i></div>
                     <div class="profile-details">
                         <h2 id="modalStudentName">Loading...</h2>
-                        <p id="modalStudentId">ID: Loading...</p>
+                        <p id="modalStudentCode">Code: Loading...</p>
                     </div>
                 </div>
                 <div class="meta-section">
@@ -166,7 +166,7 @@
                     </div>
                 </div>
                 <button type="submit" class="btn-submit" id="uploadBtn" style="margin-top: 20px;">
-                    <span class="btn-text">Upload Grades</span>
+                    <span class="btn-text">Upload Grades.xlsx</span>
                     <div class="loader" id="uploadLoader" style="display: none;"></div>
                 </button>
             </form>
@@ -177,7 +177,6 @@
         function showToast(message, type = 'error') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
-            // Adding a dynamic class based on the type (success/error)
             toast.className = `toast ${type === 'success' ? 'toast-success' : 'toast-error'}`;
             
             const icon = type === 'error' ? '<i class="ph-fill ph-warning-circle"></i>' : '<i class="ph-fill ph-check-circle"></i>';
@@ -204,7 +203,7 @@
             loader.style.display = 'block';
 
             const payload = {
-                idNumber: document.getElementById('idNumber').value,
+                accessCode: document.getElementById('accessCode').value,
                 section: document.getElementById('section').value,
                 period: document.getElementById('period').value,
                 subject: document.getElementById('subject').value,
@@ -220,7 +219,7 @@
             .then(result => {
                 if (result.success) {
                     document.getElementById('modalStudentName').textContent = result.student_name;
-                    document.getElementById('modalStudentId').textContent = `ID Number: ${result.id_number}`;
+                    document.getElementById('modalStudentCode').textContent = `Access Code: ${result.access_code}`;
                     document.getElementById('modalCourseInfo').textContent = `${result.subject_full} • ${result.section} • Term ${result.period} • Prof. ${result.teacher}`;
                     
                     const container = document.getElementById('gradesContainer');
@@ -310,7 +309,6 @@
                 adminLoginModal.style.display = 'none';
                 adminLoginForm.reset();
                 
-                // Show the upload modal upon successful login
                 setTimeout(() => {
                     adminUploadModal.style.display = 'flex';
                 }, 300); 
@@ -342,7 +340,6 @@
             btnText.style.opacity = '0.5';
             loader.style.display = 'block';
 
-            // Send to backend
             fetch('/upload_excel', {
                 method: 'POST',
                 body: formData

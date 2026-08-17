@@ -29,11 +29,11 @@ def home():
 @app.route('/get_grades', methods=['POST'])
 def get_grades():
     data = request.get_json()
-    id_number = str(data.get('idNumber')).strip()
+    access_code = str(data.get('accessCode')).strip()
     section = data.get('section')
     period = data.get('period')
     subject = data.get('subject')
-    teacher = data.get('teacher') # Fetch the teacher from request
+    teacher = data.get('teacher')
 
     sheet_name = f"{subject}({section})"
 
@@ -43,12 +43,12 @@ def get_grades():
     try:
         df = pd.read_excel(EXCEL_FILE, sheet_name=sheet_name)
         
-        # Column A (index 0) is the Student Number
-        student_id_col = df.iloc[:, 0].astype(str).str.strip()
-        student_row = df[student_id_col == id_number]
+        # Column B (index 1) is the Unique Access Code
+        access_code_col = df.iloc[:, 1].astype(str).str.strip()
+        student_row = df[access_code_col == access_code]
 
         if student_row.empty:
-            return jsonify({'success': False, 'message': f'ID {id_number} not found in {section}. Please verify.'}), 404
+            return jsonify({'success': False, 'message': f'Access code not found in {section}. Please verify.'}), 404
 
         if period == 'P1':
             categories_config = [
@@ -74,11 +74,11 @@ def get_grades():
                 }
             ]
 
-            # Extract Student Name (Col B)
+            # Extract Student Name (Col C / Index 2)
             student_name = "N/A"
-            b_idx = col_to_index('B')
-            if b_idx < len(df.columns):
-                val = student_row.iloc[0, b_idx]
+            c_idx = col_to_index('C')
+            if c_idx < len(df.columns):
+                val = student_row.iloc[0, c_idx]
                 student_name = "N/A" if pd.isna(val) or str(val).strip() == "" else str(val)
             
             # Extract P1 Final Grade (Col BG)
@@ -119,14 +119,14 @@ def get_grades():
                         'items': cat_items
                     })
 
-            # Get the full descriptive title
+            # Get full descriptive title
             subject_title = SUBJECT_TITLES.get(subject, "Course Module")
 
             return jsonify({
                 'success': True,
                 'period': period,
                 'student_name': student_name,
-                'id_number': id_number,
+                'access_code': access_code,
                 'section': section,
                 'subject_full': f"{subject} - {subject_title}",
                 'teacher': teacher,
@@ -144,7 +144,6 @@ def get_grades():
 
 @app.route('/upload_excel', methods=['POST'])
 def upload_excel():
-    # Check if a file is part of the request
     if 'file' not in request.files:
         return jsonify({'success': False, 'message': 'No file part in the request.'}), 400
     
@@ -155,7 +154,6 @@ def upload_excel():
         
     if file and file.filename.endswith('.xlsx'):
         try:
-            # Save and overwrite Grades.xlsx verbatim
             file.save(EXCEL_FILE)
             return jsonify({'success': True, 'message': 'Database updated: Grades.xlsx saved successfully.'})
         except Exception as e:
