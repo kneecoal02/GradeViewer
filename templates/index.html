@@ -28,7 +28,7 @@
                 <label for="accessCode">Access Code</label>
                 <div class="input-wrapper">
                     <i class="ph ph-key"></i>
-                    <input type="text" id="accessCode" name="accessCode" placeholder="Enter unique access code" required>
+                    <input type="password" id="accessCode" name="accessCode" placeholder="Enter unique access code" required>
                 </div>
             </div>
 
@@ -40,7 +40,11 @@
                         <select id="section" name="section" required>
                             <option value="" disabled selected>Select...</option>
                             <option value="BSIT2-3">BSIT2-3</option>
+                            <option value="BSIT2-4">BSIT2-4</option>
+                            <option value="BSIT2-5">BSIT2-5</option>
                             <option value="BSIT2-6">BSIT2-6</option>
+                            <option value="BSIT2-8">BSIT2-8</option>
+                            <option value="BSIT2-9">BSIT2-9</option>
                             <option value="BSIT2-11">BSIT2-11</option>
                             <option value="BSIT2-12">BSIT2-12</option>
                         </select>
@@ -70,10 +74,12 @@
 
     <!-- PRO DATA MODAL -->
     <div id="gradeModal" class="modal-overlay">
-        <div class="modal-content">
+        <!-- Changed this wrapper to act as a strict flex container with max-height -->
+        <div class="modal-content" style="max-width: 800px; max-height: 90vh; display: flex; flex-direction: column;">
             <button class="close-btn"><i class="ph ph-x"></i></button>
             
-            <div class="modal-header-pro">
+            <!-- Sticky Header -->
+            <div class="modal-header-pro" style="flex-shrink: 0;">
                 <div class="profile-section">
                     <div class="profile-avatar"><i class="ph-fill ph-user"></i></div>
                     <div class="profile-details">
@@ -86,8 +92,9 @@
                 </div>
             </div>
             
-            <div id="gradesContainer">
-                <!-- Table injected dynamically -->
+            <!-- Scrollable Grades Container -->
+            <div id="gradesContainer" style="display: flex; flex-direction: column; gap: 20px; margin-top: 15px; overflow-y: auto; padding-right: 10px; flex-grow: 1;">
+                <!-- Block tables injected dynamically -->
             </div>
         </div>
     </div>
@@ -192,42 +199,63 @@
                     document.getElementById('modalCourseInfo').textContent = `${result.subject_full} • ${result.section}`;
                     
                     const container = document.getElementById('gradesContainer');
-                    let elementsTable = '<div class="table-scroll-wrapper"><table class="grades-table-horizontal">';
-                    
-                    let row1 = '<tr>';
-                    let row2 = '<tr>';
-                    let row3 = '<tr class="data-row">';
+                    let htmlContent = '';
 
-                    // Check if everything is completely empty
                     if(result.modules_data.length === 0 && result.final_grades.length === 0) {
-                        row1 += `<th class="header-cat-title header-main">No Data Available</th>`;
-                        row2 += `<th class="header-main">-</th>`;
-                        row3 += `<td>-</td>`;
+                        htmlContent = '<div style="text-align:center; color:#a1a1aa; padding: 20px;">No grade records available.</div>';
                     } else {
-                        // Render dynamically discovered module columns
-                        result.modules_data.forEach(cat => {
-                            row1 += `<th colspan="${cat.items.length}" class="header-cat-title header-${cat.class_type}">${cat.category_name}</th>`;
-                            
-                            cat.items.forEach(item => {
-                                row2 += `<th class="header-${cat.class_type}-sub">${item.sub_header}</th>`;
-                                row3 += `<td><div class="grade-cell">${item.value}</div></td>`;
-                            });
+                        // Render Category Blocks
+                        result.modules_data.forEach((cat) => {
+                            htmlContent += `
+                                <div class="grade-block" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 16px;">
+                                    <div style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #a1a1aa; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                                        ${cat.category_name}
+                                    </div>
+                                    <div class="table-scroll-wrapper">
+                                        <table class="grades-table-horizontal">
+                                            <thead>
+                                                <tr>
+                                                    ${cat.items.map(item => `<th class="header-${cat.class_type}-sub">${item.sub_header}</th>`).join('')}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr class="data-row">
+                                                    ${cat.items.map(item => `<td><div class="grade-cell">${item.value}</div></td>`).join('')}
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            `;
                         });
 
-                        // Render dynamically discovered final grade columns
-                        result.final_grades.forEach(fg => {
-                            row1 += `<th rowspan="2" class="header-main sticky-col-right" style="min-width: 90px">${fg.title}</th>`;
-                            row3 += `<td class="text-bold sticky-col-right highlight-grade">${fg.value}</td>`;
-                        });
+                        // Render Final Grades Block
+                        if(result.final_grades.length > 0) {
+                            htmlContent += `
+                                <div class="grade-block" style="background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 12px; padding: 16px;">
+                                    <div style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #a1a1aa; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                                        PERIODIC & FINAL GRADES
+                                    </div>
+                                    <div class="table-scroll-wrapper">
+                                        <table class="grades-table-horizontal">
+                                            <thead>
+                                                <tr>
+                                                    ${result.final_grades.map(fg => `<th class="header-main">${fg.title}</th>`).join('')}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr class="data-row">
+                                                    ${result.final_grades.map(fg => `<td class="text-bold highlight-grade">${fg.value}</td>`).join('')}
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            `;
+                        }
                     }
 
-                    row1 += '</tr>';
-                    row2 += '</tr>';
-                    row3 += '</tr>';
-                    
-                    elementsTable += row1 + row2 + row3 + '</table></div>';
-                    container.innerHTML = elementsTable;
-
+                    container.innerHTML = htmlContent;
                     document.getElementById('gradeModal').style.display = 'flex';
                 } else {
                     showToast(result.message, 'error');
