@@ -6,6 +6,35 @@
     <title>Pro Student Gateway</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        /* Period Color Styles */
+        .th-p1 { color: #60a5fa !important; border-bottom: 2px solid #60a5fa !important; } /* Blue for P1 */
+        .th-p2 { color: #fbbf24 !important; border-bottom: 2px solid #fbbf24 !important; } /* Orange for P2 */
+        .th-p3 { color: #34d399 !important; border-bottom: 2px solid #34d399 !important; } /* Green for P3 */
+        
+        .td-p1 { background: rgba(96, 165, 250, 0.05); }
+        .td-p2 { background: rgba(251, 191, 36, 0.05); }
+        .td-p3 { background: rgba(52, 211, 153, 0.05); }
+
+        /* Period Legend */
+        .period-legend {
+            display: flex;
+            gap: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #a1a1aa;
+            margin-bottom: 12px;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            flex-wrap: wrap;
+        }
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+        .dot-p1 { width: 8px; height: 8px; border-radius: 50%; background: #60a5fa; }
+        .dot-p2 { width: 8px; height: 8px; border-radius: 50%; background: #fbbf24; }
+        .dot-p3 { width: 8px; height: 8px; border-radius: 50%; background: #34d399; }
+    </style>
 </head>
 <body>
 
@@ -74,7 +103,6 @@
 
     <!-- PRO DATA MODAL -->
     <div id="gradeModal" class="modal-overlay">
-        <!-- Changed this wrapper to act as a strict flex container with max-height -->
         <div class="modal-content" style="max-width: 800px; max-height: 90vh; display: flex; flex-direction: column;">
             <button class="close-btn"><i class="ph ph-x"></i></button>
             
@@ -169,7 +197,6 @@
             }, 4000);
         }
 
-        // --- Student Query Form Logic ---
         document.getElementById('entryForm').addEventListener('submit', function(e) {
             e.preventDefault(); 
             
@@ -199,28 +226,67 @@
                     document.getElementById('modalCourseInfo').textContent = `${result.subject_full} • ${result.section}`;
                     
                     const container = document.getElementById('gradesContainer');
-                    let htmlContent = '';
+                    
+                    // Period Legend Bar
+                    let htmlContent = `
+                        <div class="period-legend">
+                            <div class="legend-item"><div class="dot-p1"></div> P1 (Week 1–4 / Mod 1–4)</div>
+                            <div class="legend-item"><div class="dot-p2"></div> P2 (Week 5–9 / Mod 5–9)</div>
+                            <div class="legend-item"><div class="dot-p3"></div> P3 (Week 10–14 / Mod 10–14)</div>
+                        </div>
+                    `;
 
                     if(result.modules_data.length === 0 && result.final_grades.length === 0) {
                         htmlContent = '<div style="text-align:center; color:#a1a1aa; padding: 20px;">No grade records available.</div>';
                     } else {
                         // Render Category Blocks
                         result.modules_data.forEach((cat) => {
+                            // Frontend Display Override for Category Title
+                            let displayCategoryName = cat.category_name;
+                            if (displayCategoryName.includes("SOC")) {
+                                displayCategoryName = "Attendance";
+                            }
+
                             htmlContent += `
                                 <div class="grade-block" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 16px;">
                                     <div style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #a1a1aa; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                                        ${cat.category_name}
+                                        ${displayCategoryName}
                                     </div>
                                     <div class="table-scroll-wrapper">
                                         <table class="grades-table-horizontal">
                                             <thead>
                                                 <tr>
-                                                    ${cat.items.map(item => `<th class="header-${cat.class_type}-sub">${item.sub_header}</th>`).join('')}
+                                                    ${cat.items.map((item, idx) => {
+                                                        const num = idx + 1;
+                                                        
+                                                        // Determine Period Tag
+                                                        let periodClass = "p3";
+                                                        if (num <= 4) periodClass = "p1";
+                                                        else if (num <= 9) periodClass = "p2";
+
+                                                        // Transform column header label
+                                                        let headerText = item.sub_header;
+                                                        if (cat.category_name.includes("SOC")) {
+                                                            headerText = `WEEK ${num}`;
+                                                        } else if (headerText.toLowerCase().includes("mod")) {
+                                                            headerText = `Mod ${num}`;
+                                                        }
+
+                                                        return `<th class="th-${periodClass}" style="white-space: nowrap; padding: 10px;">${headerText}</th>`;
+                                                    }).join('')}
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <tr class="data-row">
-                                                    ${cat.items.map(item => `<td><div class="grade-cell">${item.value}</div></td>`).join('')}
+                                                    ${cat.items.map((item, idx) => {
+                                                        const num = idx + 1;
+                                                        
+                                                        let periodClass = "p3";
+                                                        if (num <= 4) periodClass = "p1";
+                                                        else if (num <= 9) periodClass = "p2";
+
+                                                        return `<td class="td-${periodClass}"><div class="grade-cell">${item.value}</div></td>`;
+                                                    }).join('')}
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -272,12 +338,11 @@
             });
         });
 
-        // Close Data Modal
         document.querySelector('.close-btn').addEventListener('click', () => {
             document.getElementById('gradeModal').style.display = 'none';
         });
 
-        // --- Admin Logic ---
+        // Modal triggers
         const topLoginBtn = document.getElementById('topLoginBtn');
         const adminLoginModal = document.getElementById('adminLoginModal');
         const closeLoginModal = document.getElementById('closeLoginModal');
@@ -286,22 +351,10 @@
         const closeUploadModal = document.getElementById('closeUploadModal');
         const adminUploadForm = document.getElementById('adminUploadForm');
 
-        // Open Login Modal
-        topLoginBtn.addEventListener('click', () => {
-            adminLoginModal.style.display = 'flex';
-        });
+        topLoginBtn.addEventListener('click', () => adminLoginModal.style.display = 'flex');
+        closeLoginModal.addEventListener('click', () => adminLoginModal.style.display = 'none');
+        closeUploadModal.addEventListener('click', () => adminUploadModal.style.display = 'none');
 
-        // Close Login Modal
-        closeLoginModal.addEventListener('click', () => {
-            adminLoginModal.style.display = 'none';
-        });
-
-        // Close Upload Modal
-        closeUploadModal.addEventListener('click', () => {
-            adminUploadModal.style.display = 'none';
-        });
-
-        // Handle Login Submission
         adminLoginForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const user = document.getElementById('adminUsername').value;
@@ -311,17 +364,12 @@
                 showToast('Login successful! Welcome Admin.', 'success');
                 adminLoginModal.style.display = 'none';
                 adminLoginForm.reset();
-                
-                setTimeout(() => {
-                    adminUploadModal.style.display = 'flex';
-                }, 300); 
-                
+                setTimeout(() => adminUploadModal.style.display = 'flex', 300); 
             } else {
                 showToast('Invalid username or password.', 'error');
             }
         });
 
-        // Handle Excel Upload Submission
         adminUploadForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const fileInput = document.getElementById('excelFile');
@@ -358,7 +406,6 @@
                 }
             })
             .catch(err => {
-                console.error('Upload Error:', err);
                 showToast('Failed to upload file. Please check your connection.', 'error');
             })
             .finally(() => {
@@ -368,7 +415,6 @@
             });
         });
 
-        // Close Modals if clicked outside
         window.addEventListener('click', (e) => {
             const gradeModal = document.getElementById('gradeModal');
             if (e.target === gradeModal) gradeModal.style.display = 'none';
