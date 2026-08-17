@@ -62,7 +62,30 @@ label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 8px; c
 .input-wrapper { position: relative; display: flex; align-items: center; }
 .input-wrapper i { position: absolute; left: 14px; color: #71717a; font-size: 18px; pointer-events: none; }
 
-input[type="text"], select {
+/* Password Toggle Eye Icon Styles */
+.input-wrapper input[type="password"],
+.input-wrapper input[type="text"].has-toggle {
+    padding-right: 40px !important; 
+}
+
+.toggle-password {
+    position: absolute !important;
+    left: auto !important;      
+    right: 14px !important;     
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    cursor: pointer !important;
+    color: #a1a1aa !important;
+    font-size: 18px !important;
+    transition: color 0.2s ease;
+    z-index: 10 !important;
+    pointer-events: auto !important; 
+}
+.toggle-password:hover {
+    color: #fafafa !important;
+}
+
+input[type="text"], input[type="password"], select {
     width: 100%;
     padding: 12px 14px 12px 42px;
     font-size: 14px; font-family: inherit;
@@ -78,7 +101,7 @@ select {
     background-size: 14px;
 }
 
-input[type="text"]:focus, select:focus {
+input[type="text"]:focus, input[type="password"]:focus, select:focus {
     outline: none; border-color: #6366f1;
     background-color: #27272a; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
 }
@@ -121,6 +144,14 @@ input::placeholder { color: #52525b; }
 }
 .toast i { font-size: 20px; color: #ef4444; }
 .toast.show { transform: translateX(0); }
+
+/* Success Toast Styling */
+.toast-success {
+    border-left: 4px solid #10b981;
+}
+.toast-success i {
+    color: #10b981;
+}
 
 /* ---------------------------------------------------
    Modal UI
@@ -222,20 +253,7 @@ input::placeholder { color: #52525b; }
 
 /* Table Theme Colors */
 .header-main { color: #f4f4f5; font-size: 13px; font-weight: 600; background-color: #18181b; }
-
 .header-cat-title { font-size: 14px !important; font-weight: 600 !important; letter-spacing: 0.5px; text-transform: uppercase; }
-
-.header-soc { background-color: rgba(30, 58, 138, 0.3); color: #93c5fd; }
-.header-soc-sub { background-color: rgba(30, 58, 138, 0.1); color: #bfdbfe; font-size: 12px; }
-
-.header-practice { background-color: rgba(20, 83, 45, 0.3); color: #6ee7b7; }
-.header-practice-sub { background-color: rgba(20, 83, 45, 0.1); color: #a7f3d0; font-size: 12px; }
-
-.header-reflection { background-color: rgba(88, 28, 135, 0.3); color: #c084fc; }
-.header-reflection-sub { background-color: rgba(88, 28, 135, 0.1); color: #d8b4fe; font-size: 12px; }
-
-.header-wrapup { background-color: rgba(124, 45, 18, 0.3); color: #fdba74; }
-.header-wrapup-sub { background-color: rgba(124, 45, 18, 0.1); color: #fed7aa; font-size: 12px; }
 
 .col-badge {
     display: inline-block; background-color: rgba(255,255,255,0.1); color: inherit;
@@ -244,6 +262,36 @@ input::placeholder { color: #52525b; }
 
 .text-bold { font-weight: 600; color: #fafafa !important; }
 .highlight-grade { font-size: 16px !important; color: #818cf8 !important; }
+
+/* ---------------------------------------------------
+   Period Color Styles & Legend
+------------------------------------------------------ */
+.th-p1 { color: #60a5fa !important; border-bottom: 2px solid #60a5fa !important; } 
+.th-p2 { color: #fbbf24 !important; border-bottom: 2px solid #fbbf24 !important; } 
+.th-p3 { color: #34d399 !important; border-bottom: 2px solid #34d399 !important; } 
+
+.td-p1 { background: rgba(96, 165, 250, 0.05); }
+.td-p2 { background: rgba(251, 191, 36, 0.05); }
+.td-p3 { background: rgba(52, 211, 153, 0.05); }
+
+.period-legend {
+    display: flex;
+    gap: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #a1a1aa;
+    margin-bottom: 12px;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    flex-wrap: wrap;
+}
+.legend-item { display: flex; align-items: center; gap: 6px; }
+.dot-p1 { width: 8px; height: 8px; border-radius: 50%; background: #60a5fa; }
+.dot-p2 { width: 8px; height: 8px; border-radius: 50%; background: #fbbf24; }
+.dot-p3 { width: 8px; height: 8px; border-radius: 50%; background: #34d399; }
+
 /* ---------------------------------------------------
    Top Login Button & Modal
 ------------------------------------------------------ */
@@ -310,28 +358,6 @@ input::placeholder { color: #52525b; }
 }
 .login-close-btn:hover { color: #f4f4f5; }
 
-/* Password Input Styling (Matches text input) */
-input[type="password"] {
-    width: 100%;
-    padding: 12px 14px 12px 42px;
-    font-size: 14px; font-family: inherit;
-    color: #f4f4f5; background-color: #18181b;
-    border: 1px solid #3f3f46; border-radius: 10px;
-    transition: all 0.2s ease; appearance: none;
-}
-
-input[type="password"]:focus {
-    outline: none; border-color: #6366f1;
-    background-color: #27272a; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
-}
-
-/* Success Toast Styling */
-.toast-success {
-    border-left: 4px solid #10b981;
-}
-.toast-success i {
-    color: #10b981;
-}
 /* ---------------------------------------------------
    File Upload Specifics
 ------------------------------------------------------ */
