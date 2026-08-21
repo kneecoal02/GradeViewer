@@ -13,6 +13,6 @@ services:
       - .:/app
 
     env_file:
-      - ./app/.env
+      - ./.env
 
     restart: unless-stopped
