@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pro Student Gateway</title>
+    <!-- Links to your external style.css which now contains all your styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-
 </head>
 <body>
 
@@ -124,8 +124,9 @@
                         <i class="ph ph-eye toggle-password" id="toggleAdminPassword"></i>
                     </div>
                 </div>
-                <button type="submit" class="btn-submit" style="margin-top: 20px;">
+                <button type="submit" class="btn-submit" id="adminLoginBtn" style="margin-top: 20px;">
                     <span class="btn-text">Login</span>
+                    <div class="loader" id="adminLoginLoader" style="display: none;"></div>
                 </button>
             </form>
         </div>
@@ -234,7 +235,6 @@
                     } else {
                         // Render Category Blocks
                         result.modules_data.forEach((cat) => {
-                            // Frontend Display Override for Category Title
                             let displayCategoryName = cat.category_name;
                             if (displayCategoryName.includes("SOC")) {
                                 displayCategoryName = "Attendance";
@@ -251,13 +251,10 @@
                                                 <tr>
                                                     ${cat.items.map((item, idx) => {
                                                         const num = idx + 1;
-                                                        
-                                                        // Determine Period Tag
                                                         let periodClass = "p3";
                                                         if (num <= 4) periodClass = "p1";
                                                         else if (num <= 9) periodClass = "p2";
 
-                                                        // Transform column header label
                                                         let headerText = item.sub_header;
                                                         if (cat.category_name.includes("SOC")) {
                                                             headerText = `WEEK ${num}`;
@@ -273,7 +270,6 @@
                                                 <tr class="data-row">
                                                     ${cat.items.map((item, idx) => {
                                                         const num = idx + 1;
-                                                        
                                                         let periodClass = "p3";
                                                         if (num <= 4) periodClass = "p1";
                                                         else if (num <= 9) periodClass = "p2";
@@ -348,21 +344,48 @@
         closeLoginModal.addEventListener('click', () => adminLoginModal.style.display = 'none');
         closeUploadModal.addEventListener('click', () => adminUploadModal.style.display = 'none');
 
-        adminLoginForm.addEventListener('submit', (e) => {
+        // NEW SECURE ADMIN LOGIN
+        adminLoginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            const btn = document.getElementById('adminLoginBtn');
+            const btnText = btn.querySelector('.btn-text');
+            const loader = document.getElementById('adminLoginLoader');
+            
             const user = document.getElementById('adminUsername').value;
             const pass = document.getElementById('adminPassword').value;
 
-            if (user === 'admin' && pass === 'admin123') {
-                showToast('Login successful! Welcome Admin.', 'success');
-                adminLoginModal.style.display = 'none';
-                adminLoginForm.reset();
-                setTimeout(() => adminUploadModal.style.display = 'flex', 300); 
-            } else {
-                showToast('Invalid username or password.', 'error');
+            btn.disabled = true;
+            btnText.style.opacity = '0.5';
+            loader.style.display = 'block';
+
+            try {
+                const response = await fetch('/admin_login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: user, password: pass })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast('Login successful! Welcome Admin.', 'success');
+                    adminLoginModal.style.display = 'none';
+                    adminLoginForm.reset();
+                    setTimeout(() => adminUploadModal.style.display = 'flex', 300); 
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch (err) {
+                showToast('Failed to connect to the server.', 'error');
+            } finally {
+                btn.disabled = false;
+                btnText.style.opacity = '1';
+                loader.style.display = 'none';
             }
         });
 
+        // UPLOAD LOGIC
         adminUploadForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const fileInput = document.getElementById('excelFile');
