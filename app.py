@@ -1,30 +1,12 @@
 import os
 import pandas as pd
 from flask import Flask, render_template, request, jsonify
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 from dotenv import load_dotenv
 
 # 1. Load variables from .env file
 load_dotenv()
 
 app = Flask(__name__)
-
-# 2. Initialize Rate Limiter
-limiter = Limiter(
-    get_remote_address,
-    app=app,
-    default_limits=["200 per day", "50 per hour"], # Global default limit
-    storage_uri="memory://" # Uses in-memory storage (simple & fast)
-)
-
-# 3. Custom 429 Error Handler so your frontend JS toast handles it gracefully
-@app.errorhandler(429)
-def ratelimit_handler(e):
-    return jsonify(
-        success=False, 
-        message=f"Rate limit exceeded: {e.description}. Please slow down!"
-    ), 429
 
 
 # ==========================================
@@ -60,7 +42,6 @@ def home():
 
 # --- SECURE ADMIN LOGIN ---
 @app.route('/admin_login', methods=['POST'])
-@limiter.limit("5 per minute") # Prevents brute-force password guessing
 def admin_login():
     data = request.get_json()
     username_attempt = data.get('username')
@@ -78,7 +59,6 @@ def admin_login():
 
 # --- GET GRADES ROUTE ---
 @app.route('/get_grades', methods=['POST'])
-@limiter.limit("5 per minute") # Max 5 attempts per minute per IP
 def get_grades():
     data = request.get_json()
     access_code = str(data.get('accessCode')).strip()
@@ -223,7 +203,6 @@ def get_grades():
 
 # --- EXCEL UPLOAD ROUTE ---
 @app.route('/upload_excel', methods=['POST'])
-@limiter.limit("3 per minute") # Max 3 uploads per minute per IP
 def upload_excel():
     if 'file' not in request.files:
         return jsonify({'success': False, 'message': 'No file part in the request.'}), 400
