@@ -1,14 +1,34 @@
-from flask import Flask, render_template, request, jsonify
+import os
 import pandas as pd
+from flask import Flask, render_template, request, jsonify
+from dotenv import load_dotenv
+
+# --- GOOGLE SHEETS IMPORTS ---
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
+load_dotenv()
+
 app = Flask(__name__)
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 
 
-# --- Google Sheets Config ---
-CREDS_FILE = 'google_credentials.json'
-GOOGLE_SHEET_NAME = 'Copy of Lampa_ITE 031_2-9'  
+# ==========================================
+# GOOGLE SHEETS SETUP
+# ==========================================
+SCOPE = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 
+try:
+    CREDS = ServiceAccountCredentials.from_json_keyfile_name('google_credentials.json', SCOPE)
+    GSPREAD_CLIENT = gspread.authorize(CREDS)
+    print("Successfully connected to Google APIs!")
+except Exception as e:
+    print(f"Warning: Failed to load credentials.json. Google Sheets won't work. Error: {e}")
+    GSPREAD_CLIENT = None
+
+
+# ==========================================
+# CONSTANTS & HELPERS
+# ==========================================
 SUBJECT_TITLES = {
     "ITE 300": "Object Oriented Programming",
     "ITE 298": "IT Elective 1",        
@@ -16,7 +36,7 @@ SUBJECT_TITLES = {
 }
 
 def col_to_index(col_str):
-    """Converts an Excel/Sheets column letter (e.g., 'A', 'BG') to a 0-based index."""
+    """Converts an Excel column letter (e.g., 'A', 'BG') to a 0-based index."""
     expn = 0
     col_num = 0
     for char in reversed(col_str.upper()):
@@ -24,104 +44,149 @@ def col_to_index(col_str):
         expn += 1
     return col_num - 1
 
-def get_gsheet_client():
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_name(CREDS_FILE, scope)
-    return gspread.authorize(creds)
-
-def pad_data(data, target_cols=150):
-    """Forces spreadsheet data to a specific width so columns don't get truncated by Google API."""
-    return [row + [""] * max(0, target_cols - len(row)) for row in data]
+# ==========================================
+# ROUTES
+# ==========================================
 
 @app.route('/')
 def home():
     return render_template('index.html')
 
+
+@app.route('/admin_login', methods=['POST'])
+def admin_login():
+    data = request.get_json()
+    username_attempt = data.get('username')
+    password_attempt = data.get('password')
+
+    correct_username = os.getenv('ADMIN_USERNAME')
+    correct_password = os.getenv('ADMIN_PASSWORD')
+
+    if username_attempt == correct_username and password_attempt == correct_password:
+        return jsonify(success=True, message="Login successful")
+    else:
+        return jsonify(success=False, message="Invalid username or password"), 401
+
+
 @app.route('/get_grades', methods=['POST'])
 def get_grades():
     data = request.get_json()
-    
-    id_number = str(data.get('accessCode', data.get('idNumber'))).strip()
-    section = data.get('section', 'N/A')
-    subject = data.get('subject', 'N/A')
-    teacher = data.get('teacher', 'N/A')
+    access_code = str(data.get('accessCode')).strip()
+    section = data.get('section')  # e.g., "BSIT2-9"
+    subject = data.get('subject')  # e.g., "ITE 031"
+
+    if GSPREAD_CLIENT is None:
+        return jsonify({'success': False, 'message': 'Database offline: Google Credentials missing.'}), 500
+
+    # 1. Construct the Google Sheet File Name
+    section_suffix = section.replace("BSIT", "")
+    target_filename = f"Copy of Lampa_{subject}_{section_suffix}"
 
     try:
-        client = get_gsheet_client()
+        # 2. Open the specific Google Sheet by name
+        spreadsheet = GSPREAD_CLIENT.open(target_filename)
         
+        # Explicitly get the "Grading Summary Sheet" tab
         try:
-            sheet_doc = client.open(GOOGLE_SHEET_NAME)
-            # We ONLY need the Summary Sheet now
-            summary_ws = sheet_doc.worksheet("Grading Summary Sheet")
-        except gspread.exceptions.WorksheetNotFound as e:
-            return jsonify({'success': False, 'message': f'Required tab is missing: {str(e)}'}), 404
-        except gspread.exceptions.SpreadsheetNotFound:
-            return jsonify({'success': False, 'message': f'Database offline: "{GOOGLE_SHEET_NAME}" not found.'}), 404
-
-        raw_summary = summary_ws.get_all_values()
-        if not raw_summary:
-             return jsonify({'success': False, 'message': 'Summary worksheet is empty.'}), 404
-
-        df_summary = pd.DataFrame(pad_data(raw_summary, 150))
-
-        # 1. MATCH STUDENT DIRECTLY IN SUMMARY SHEET (Column B / Index 1)
-        summary_id_col = df_summary.iloc[:, 1].astype(str).str.strip()
-        matching_indices = df_summary.index[summary_id_col == id_number].tolist()
-
-        if not matching_indices:
-            return jsonify({'success': False, 'message': f'Access Code {id_number} not found in Summary Sheet. Please verify.'}), 404
-
-        row_idx = matching_indices[0] # Exact row for this student
-
-        # 2. Extract Student Name from Summary Sheet Column C (Index 2)
-        val_name = df_summary.iloc[row_idx, 2]
-        student_name = "N/A" if pd.isna(val_name) or str(val_name).strip() == "" else str(val_name).strip()
-
-        # 3. Extract All Final Grades (P1=K, P2=S, P3=AB)
-        final_grades = []
-        for period, col_letter in [('P1', 'K'), ('P2', 'S'), ('P3', 'AB')]:
-            val_fg = df_summary.iloc[row_idx, col_to_index(col_letter)]
-            if not pd.isna(val_fg) and str(val_fg).strip() != "":
-                final_grades.append({'title': f'{period} Grade', 'value': str(val_fg).strip()})
-
-        # 4. Extract Modules & All Check-Ins
-        categories_config = [
-            {'name': 'Attendance', 'class_type': 'soc', 'columns': ['AD','AE','AF','AG','AH','AI','AJ','AK','AL','AM','AN','AO','AP','AQ']},
-            {'name': "Let's Practice", 'class_type': 'practice', 'columns': ['AU','AV','AW','AX','AY','AZ','BA','BB','BC','BD','BE','BF','BG','BH']},
-            {'name': 'Reflection', 'class_type': 'reflection', 'columns': ['BL','BM','BN','BO','BP','BQ','BR','BS','BT','BU','BV','BW','BX','BY']},
-            {'name': 'Wrap Up', 'class_type': 'wrapup', 'columns': ['CC','CD','CE','CF','CG','CH','CI','CJ','CK','CL','CM','CN','CO','CP']},
-            {'name': 'Check-In', 'class_type': 'checkin', 'columns': ['CT', 'CU', 'CV', 'CW']}
-        ]
+            worksheet = spreadsheet.worksheet("Grading Summary Sheet")
+        except gspread.exceptions.WorksheetNotFound:
+            return jsonify({'success': False, 'message': 'Could not find a tab named "Grading Summary Sheet".'}), 404
         
+        # 3. Pull all data and convert to pandas DataFrame
+        data_records = worksheet.get_all_values()
+        df = pd.DataFrame(data_records)
+        
+        # Safely clean up empty strings
+        df.replace("", float("NaN"), inplace=True)
+
+        # Column B (index 1) is the Unique Access Code (case-insensitive check)
+        user_code = access_code.lower()
+        access_code_col = df.iloc[:, 1].astype(str).str.strip().str.lower()
+        student_row = df[access_code_col == user_code]
+
+        if student_row.empty:
+            return jsonify({'success': False, 'message': f'Access code not found in {section}. Please verify.'}), 404
+
+        # Full column mapping
+        categories_config = [
+            {
+                'name': 'Attendance',
+                'class_type': 'soc',
+                'columns': ['AD','AE','AF','AG','AH','AI','AJ','AK','AL','AM','AN','AO','AP','AQ']
+            },
+            {
+                'name': "Let's Practice",
+                'class_type': 'practice',
+                'columns': ['AU','AV','AW','AX','AY','AZ','BA','BB','BC','BD','BE','BF','BG','BH']
+            },
+            {
+                'name': 'Reflection',
+                'class_type': 'reflection',
+                'columns': ['BL','BM','BN','BO','BP','BQ','BR','BS','BT','BU','BV','BW','BX','BY']
+            },
+            {
+                'name': 'Wrap Up',
+                'class_type': 'wrapup',
+                'columns': ['CC','CD','CE','CF','CG','CH','CI','CJ','CK','CL','CM','CN','CO','CP']
+            },
+            {
+                'name': 'Check-in Grades',
+                'class_type': 'assessments',
+                'columns': ['CT', 'CU', 'CV', 'CW'],
+                'headers': ['P1 Check-in', 'P2 Check-in', 'P3.1 Check-in', 'P3.2 Check-in']
+            }
+        ]
+
+        # Extract Student Name (Col C / Index 2)
+        student_name = "N/A"
+        c_idx = col_to_index('C')
+        if c_idx < len(df.columns):
+            val = student_row.iloc[0, c_idx]
+            student_name = "N/A" if pd.isna(val) or str(val).strip() == "" else str(val)
+        
+        # Extract Available Modules
         modules_data = []
         for cat in categories_config:
             cat_items = []
-            for i, col_letter in enumerate(cat['columns'], start=1):
+            for i, col_letter in enumerate(cat['columns']):
                 col_idx = col_to_index(col_letter)
-                val = df_summary.iloc[row_idx, col_idx]
-                
-                if pd.isna(val) or val is None or str(val).strip() == "":
-                    continue
+                if col_idx < len(df.columns):
+                    val = student_row.iloc[0, col_idx]
                     
-                val_str = str(val).strip()
-                if val_str.endswith('.0'):
-                    val_str = val_str[:-2]
+                    if pd.isna(val) or str(val).strip() == "":
+                        continue
                     
-                # Dynamic Sub-headers
-                if cat['name'] == 'Check-In':
-                    if col_letter == 'CT': sub_hdr = 'P1'
-                    elif col_letter == 'CU': sub_hdr = 'P2'
-                    elif col_letter == 'CV': sub_hdr = '3.1'
-                    elif col_letter == 'CW': sub_hdr = '3.2'
-                    else: sub_hdr = f'Mod {i}'
-                else:
-                    sub_hdr = f'Mod {i}'
+                    # Safely attempt to convert string to a number for rounding
+                    try:
+                        num_val = float(val)
+                        is_number = True
+                    except (ValueError, TypeError):
+                        is_number = False
+
+                    if cat['class_type'] == 'wrapup':
+                        if is_number:
+                            val = str(round((num_val * 7) / 100))
+                        else:
+                            val = str(val)
+                    else:
+                        if is_number:
+                            if num_val.is_integer():
+                                val = str(int(num_val))
+                            else:
+                                val = str(round(num_val, 2))
+                        else:
+                            val = str(val)
                     
-                cat_items.append({
-                    'column': col_letter,
-                    'sub_header': sub_hdr,
-                    'value': val_str
-                })
+                    if 'headers' in cat:
+                        sub_header = cat['headers'][i]
+                    else:
+                        sub_header = f'Mod {i+1}'
+
+                    cat_items.append({
+                        'column': col_letter,
+                        'sub_header': sub_header,
+                        'value': val
+                    })
             
             if cat_items:
                 modules_data.append({
@@ -130,19 +195,41 @@ def get_grades():
                     'items': cat_items
                 })
 
+        # Extract Final Grades (Shifted to K, S, AB)
+        final_grades = []
+        for col_letter, title in [('K', 'P1 Grade'), ('S', 'P2 Grade'), ('AB', 'P3 Grade')]:
+            idx = col_to_index(col_letter)
+            if idx < len(df.columns):
+                val = student_row.iloc[0, idx]
+                if not pd.isna(val) and str(val).strip() != "":
+                    # Safely convert final grades
+                    try:
+                        num_val = float(val)
+                        if num_val.is_integer():
+                            val_str = str(int(num_val))
+                        else:
+                            val_str = str(round(num_val, 2))
+                    except (ValueError, TypeError):
+                        val_str = str(val)
+
+                    final_grades.append({
+                        'title': title,
+                        'value': val_str
+                    })
+
         subject_title = SUBJECT_TITLES.get(subject, "Course Module")
 
         return jsonify({
             'success': True,
             'student_name': student_name,
-            'id_number': id_number,
             'section': section,
             'subject_full': f"{subject} - {subject_title}",
-            'teacher': teacher,
             'final_grades': final_grades,
             'modules_data': modules_data
         })
 
+    except gspread.exceptions.SpreadsheetNotFound:
+        return jsonify({'success': False, 'message': f'Server could not find the file: {target_filename}. Ensure it is shared with the bot email.'}), 404
     except Exception as e:
         return jsonify({'success': False, 'message': f'Server Exception: {str(e)}'}), 500
 
