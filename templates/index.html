@@ -4,13 +4,52 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pro Student Gateway</title>
-    <!-- Links to your external style.css which now contains all your styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        /* --- DYNAMIC COLOR CODING FOR PERIODS (P1, P2, P3) --- */
+        
+        /* P1: Modules/Weeks 1 to 4 (Blue) */
+        .color-p1 { color: #60a5fa !important; }
+        .bg-p1 { background: rgba(96, 165, 250, 0.15) !important; color: #60a5fa !important; border-bottom: 2px solid rgba(96, 165, 250, 0.4) !important; }
+        
+        /* P2: Modules/Weeks 5 to 9 (Green) */
+        .color-p2 { color: #34d399 !important; }
+        .bg-p2 { background: rgba(52, 211, 153, 0.15) !important; color: #34d399 !important; border-bottom: 2px solid rgba(52, 211, 153, 0.4) !important; }
+        
+        /* P3: Modules/Weeks 10 to 14 (Purple) */
+        .color-p3 { color: #a78bfa !important; }
+        .bg-p3 { background: rgba(167, 139, 250, 0.15) !important; color: #a78bfa !important; border-bottom: 2px solid rgba(167, 139, 250, 0.4) !important; }
+        
+        /* Default for anything else */
+        .color-default { color: #f4f4f5 !important; }
+        .bg-default { background: rgba(255, 255, 255, 0.05) !important; color: #f4f4f5 !important; border-bottom: 2px solid rgba(255, 255, 255, 0.1) !important; }
+
+        /* Table & Layout styling */
+        .grades-table-horizontal th { padding: 10px; font-size: 12px; font-weight: 700; text-align: center; }
+        .grades-table-horizontal td { padding: 12px 10px; text-align: center; border-right: 1px solid rgba(255,255,255,0.02); }
+        .grades-table-horizontal td:last-child { border-right: none; }
+        .grade-cell { font-weight: 700; font-size: 14px; }
+        
+        .period-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.08);
+            letter-spacing: 0.5px;
+        }
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+    </style>
 </head>
 <body>
 
-    <!-- Top Right Login Button -->
     <button id="topLoginBtn" class="top-login-btn">
         <i class="ph ph-sign-in"></i> Admin
     </button>
@@ -29,13 +68,12 @@
                 <label for="accessCode">Access Code</label>
                 <div class="input-wrapper">
                     <i class="ph ph-key"></i>
-                    <input type="password" id="accessCode" name="accessCode" class="has-toggle" placeholder="Enter unique access code" required>
-                    <i class="ph ph-eye toggle-password" id="toggleAccessCode"></i>
+                    <input type="text" id="accessCode" name="accessCode" placeholder="Enter unique access code" required>
                 </div>
             </div>
 
             <div class="form-row">
-                <div class="form-group half">
+                <div class="form-group half" style="width: 100%;">
                     <label for="section">Section</label>
                     <div class="input-wrapper">
                         <i class="ph ph-users"></i>
@@ -52,18 +90,18 @@
                         </select>
                     </div>
                 </div>
+            </div>
 
-                <div class="form-group half">
-                    <label for="subject">Course Subject</label>
-                    <div class="input-wrapper">
-                        <i class="ph ph-book-bookmark"></i>
-                        <select id="subject" name="subject" required>
-                            <option value="" disabled selected>Choose...</option>
-                            <option value="ITE 300">ITE 300</option>
-                            <option value="ITE 298">ITE 298</option>
-                            <option value="ITE 031">ITE 031</option>
-                        </select>
-                    </div>
+            <div class="form-group">
+                <label for="subject">Course Subject</label>
+                <div class="input-wrapper">
+                    <i class="ph ph-book-bookmark"></i>
+                    <select id="subject" name="subject" required>
+                        <option value="" disabled selected>Choose...</option>
+                        <option value="ITE 300">ITE 300</option>
+                        <option value="ITE 298">ITE 298</option>
+                        <option value="ITE 031">ITE 031</option>
+                    </select>
                 </div>
             </div>
 
@@ -76,10 +114,9 @@
 
     <!-- PRO DATA MODAL -->
     <div id="gradeModal" class="modal-overlay">
-        <div class="modal-content" style="max-width: 800px; max-height: 90vh; display: flex; flex-direction: column;">
+        <div class="modal-content" style="max-width: 850px; max-height: 90vh; display: flex; flex-direction: column;">
             <button class="close-btn"><i class="ph ph-x"></i></button>
             
-            <!-- Sticky Header -->
             <div class="modal-header-pro" style="flex-shrink: 0;">
                 <div class="profile-section">
                     <div class="profile-avatar"><i class="ph-fill ph-user"></i></div>
@@ -93,9 +130,7 @@
                 </div>
             </div>
             
-            <!-- Scrollable Grades Container -->
             <div id="gradesContainer" style="display: flex; flex-direction: column; gap: 20px; margin-top: 15px; overflow-y: auto; padding-right: 10px; flex-grow: 1;">
-                <!-- Block tables injected dynamically -->
             </div>
         </div>
     </div>
@@ -120,13 +155,11 @@
                     <label for="adminPassword">Password</label>
                     <div class="input-wrapper">
                         <i class="ph ph-lock-key"></i>
-                        <input type="password" id="adminPassword" class="has-toggle" required placeholder="Enter password">
-                        <i class="ph ph-eye toggle-password" id="toggleAdminPassword"></i>
+                        <input type="password" id="adminPassword" required placeholder="Enter password">
                     </div>
                 </div>
-                <button type="submit" class="btn-submit" id="adminLoginBtn" style="margin-top: 20px;">
+                <button type="submit" class="btn-submit" style="margin-top: 20px;">
                     <span class="btn-text">Login</span>
-                    <div class="loader" id="adminLoginLoader" style="display: none;"></div>
                 </button>
             </form>
         </div>
@@ -156,39 +189,36 @@
     </div>
 
     <script>
-        // Toggle Password Visibility Logic
-        function setupPasswordToggle(toggleIconId, inputId) {
-            const toggleIcon = document.getElementById(toggleIconId);
-            const inputField = document.getElementById(inputId);
-
-            if (toggleIcon && inputField) {
-                toggleIcon.addEventListener('click', function () {
-                    const type = inputField.getAttribute('type') === 'password' ? 'text' : 'password';
-                    inputField.setAttribute('type', type);
-                    
-                    this.classList.toggle('ph-eye');
-                    this.classList.toggle('ph-eye-slash');
-                });
-            }
-        }
-
-        setupPasswordToggle('toggleAccessCode', 'accessCode');
-        setupPasswordToggle('toggleAdminPassword', 'adminPassword');
-
         function showToast(message, type = 'error') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
             toast.className = `toast ${type === 'success' ? 'toast-success' : 'toast-error'}`;
-            
             const icon = type === 'error' ? '<i class="ph-fill ph-warning-circle"></i>' : '<i class="ph-fill ph-check-circle"></i>';
             toast.innerHTML = `${icon} <span>${message}</span>`;
-            
             container.appendChild(toast);
             setTimeout(() => toast.classList.add('show'), 10);
             setTimeout(() => {
                 toast.classList.remove('show');
                 setTimeout(() => toast.remove(), 300);
             }, 4000);
+        }
+
+        // --- Helper Function to Determine Period Class by Number (FIXED REGEX) ---
+        function getPeriodClass(subHeader, type = 'bg') {
+            if (!subHeader) return `${type}-default`;
+            
+            // This grabs any number in the string (e.g., 'M1' -> '1', 'Week 12' -> '12')
+            const numMatch = subHeader.match(/[0-9]+/); 
+            
+            if (!numMatch) return `${type}-default`;
+            
+            const num = parseInt(numMatch[0]);
+            
+            if (num >= 1 && num <= 4) return `${type}-p1`;
+            if (num >= 5 && num <= 9) return `${type}-p2`;
+            if (num >= 10 && num <= 14) return `${type}-p3`;
+            
+            return `${type}-default`;
         }
 
         document.getElementById('entryForm').addEventListener('submit', function(e) {
@@ -220,62 +250,47 @@
                     document.getElementById('modalCourseInfo').textContent = `${result.subject_full} • ${result.section}`;
                     
                     const container = document.getElementById('gradesContainer');
-                    
-                    // Period Legend Bar
-                    let htmlContent = `
-                        <div class="period-legend">
-                            <div class="legend-item"><div class="dot-p1"></div> P1 (Week 1–4 / Mod 1–4)</div>
-                            <div class="legend-item"><div class="dot-p2"></div> P2 (Week 5–9 / Mod 5–9)</div>
-                            <div class="legend-item"><div class="dot-p3"></div> P3 (Week 10–14 / Mod 10–14)</div>
-                        </div>
-                    `;
+                    let htmlContent = '';
 
                     if(result.modules_data.length === 0 && result.final_grades.length === 0) {
                         htmlContent = '<div style="text-align:center; color:#a1a1aa; padding: 20px;">No grade records available.</div>';
                     } else {
-                        // Render Category Blocks
-                        result.modules_data.forEach((cat) => {
-                            let displayCategoryName = cat.category_name;
-                            if (displayCategoryName.includes("SOC")) {
-                                displayCategoryName = "Attendance";
-                            }
+                        // --- 1. RENDER THE LEGEND ---
+                        htmlContent += `
+                            <div class="period-legend">
+                                <div class="legend-item"><span style="color: #60a5fa; font-size: 16px;">■</span> P1 - MODULE 1 TO 4</div>
+                                <div class="legend-item"><span style="color: #34d399; font-size: 16px;">■</span> P2 - MODULE 1 TO 9</div>
+                                <div class="legend-item"><span style="color: #a78bfa; font-size: 16px;">■</span> P3 - MODULE 1 TO 14</div>
+                            </div>
+                        `;
 
+                        // --- 2. RENDER THE TABLES ---
+                        result.modules_data.forEach((cat) => {
                             htmlContent += `
                                 <div class="grade-block" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 16px;">
-                                    <div style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #a1a1aa; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                                        ${displayCategoryName}
+                                    <div style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; color: #f4f4f5;">
+                                        ${cat.category_name}
                                     </div>
-                                    <div class="table-scroll-wrapper">
-                                        <table class="grades-table-horizontal">
+                                    <div class="table-scroll-wrapper" style="overflow-x: auto;">
+                                        <table class="grades-table-horizontal" style="width: 100%; border-collapse: collapse;">
                                             <thead>
                                                 <tr>
-                                                    ${cat.items.map((item, idx) => {
-                                                        const num = idx + 1;
-                                                        let periodClass = "p3";
-                                                        if (num <= 4) periodClass = "p1";
-                                                        else if (num <= 9) periodClass = "p2";
-
-                                                        let headerText = item.sub_header;
-                                                        if (cat.category_name.includes("SOC")) {
-                                                            headerText = `WEEK ${num}`;
-                                                        } else if (headerText.toLowerCase().includes("mod")) {
-                                                            headerText = `Mod ${num}`;
-                                                        }
-
-                                                        return `<th class="th-${periodClass}" style="white-space: nowrap; padding: 10px;">${headerText}</th>`;
-                                                    }).join('')}
+                                                    ${cat.items.map(item => `
+                                                        <th class="${getPeriodClass(item.sub_header, 'bg')}" style="border-radius: 6px 6px 0 0;">
+                                                            ${item.sub_header}
+                                                        </th>
+                                                    `).join('')}
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <tr class="data-row">
-                                                    ${cat.items.map((item, idx) => {
-                                                        const num = idx + 1;
-                                                        let periodClass = "p3";
-                                                        if (num <= 4) periodClass = "p1";
-                                                        else if (num <= 9) periodClass = "p2";
-
-                                                        return `<td class="td-${periodClass}"><div class="grade-cell">${item.value}</div></td>`;
-                                                    }).join('')}
+                                                <tr class="data-row" style="background: rgba(255, 255, 255, 0.02);">
+                                                    ${cat.items.map(item => `
+                                                        <td>
+                                                            <div class="grade-cell ${getPeriodClass(item.sub_header, 'color')}">
+                                                                ${item.value}
+                                                            </div>
+                                                        </td>
+                                                    `).join('')}
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -284,23 +299,23 @@
                             `;
                         });
 
-                        // Render Final Grades Block
+                        // --- 3. FINAL/PERIODIC GRADES SUMMARY ---
                         if(result.final_grades.length > 0) {
                             htmlContent += `
                                 <div class="grade-block" style="background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 12px; padding: 16px;">
-                                    <div style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #a1a1aa; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                                        PERIODIC & FINAL GRADES
+                                    <div style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #a1a1aa; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                                        PERIODIC GRADES
                                     </div>
-                                    <div class="table-scroll-wrapper">
-                                        <table class="grades-table-horizontal">
+                                    <div class="table-scroll-wrapper" style="overflow-x: auto;">
+                                        <table class="grades-table-horizontal" style="width: 100%; border-collapse: collapse;">
                                             <thead>
                                                 <tr>
-                                                    ${result.final_grades.map(fg => `<th class="header-main">${fg.title}</th>`).join('')}
+                                                    ${result.final_grades.map(fg => `<th style="background: rgba(255,255,255,0.05); color: #fff; border-bottom: 2px solid rgba(255,255,255,0.1); border-radius: 6px 6px 0 0;">${fg.title}</th>`).join('')}
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <tr class="data-row">
-                                                    ${result.final_grades.map(fg => `<td class="text-bold highlight-grade">${fg.value}</td>`).join('')}
+                                                    ${result.final_grades.map(fg => `<td style="color: #60a5fa; font-weight: bold; font-size: 16px;">${fg.value}</td>`).join('')}
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -317,7 +332,6 @@
                 }
             })
             .catch(err => {
-                console.error('Network Error:', err);
                 showToast('Unable to reach server. Please check your connection.', 'error');
             })
             .finally(() => {
@@ -331,7 +345,7 @@
             document.getElementById('gradeModal').style.display = 'none';
         });
 
-        // Modal triggers
+        // --- Admin Modals Logic ---
         const topLoginBtn = document.getElementById('topLoginBtn');
         const adminLoginModal = document.getElementById('adminLoginModal');
         const closeLoginModal = document.getElementById('closeLoginModal');
@@ -340,100 +354,52 @@
         const closeUploadModal = document.getElementById('closeUploadModal');
         const adminUploadForm = document.getElementById('adminUploadForm');
 
-        topLoginBtn.addEventListener('click', () => adminLoginModal.style.display = 'flex');
-        closeLoginModal.addEventListener('click', () => adminLoginModal.style.display = 'none');
-        closeUploadModal.addEventListener('click', () => adminUploadModal.style.display = 'none');
+        topLoginBtn.addEventListener('click', () => { adminLoginModal.style.display = 'flex'; });
+        closeLoginModal.addEventListener('click', () => { adminLoginModal.style.display = 'none'; });
+        closeUploadModal.addEventListener('click', () => { adminUploadModal.style.display = 'none'; });
 
-        // NEW SECURE ADMIN LOGIN
-        adminLoginForm.addEventListener('submit', async (e) => {
+        adminLoginForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            
-            const btn = document.getElementById('adminLoginBtn');
-            const btnText = btn.querySelector('.btn-text');
-            const loader = document.getElementById('adminLoginLoader');
-            
             const user = document.getElementById('adminUsername').value;
             const pass = document.getElementById('adminPassword').value;
-
-            btn.disabled = true;
-            btnText.style.opacity = '0.5';
-            loader.style.display = 'block';
-
-            try {
-                const response = await fetch('/admin_login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: user, password: pass })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showToast('Login successful! Welcome Admin.', 'success');
-                    adminLoginModal.style.display = 'none';
-                    adminLoginForm.reset();
-                    setTimeout(() => adminUploadModal.style.display = 'flex', 300); 
-                } else {
-                    showToast(result.message, 'error');
-                }
-            } catch (err) {
-                showToast('Failed to connect to the server.', 'error');
-            } finally {
-                btn.disabled = false;
-                btnText.style.opacity = '1';
-                loader.style.display = 'none';
+            if (user === 'admin' && pass === 'admin123') {
+                showToast('Login successful!', 'success');
+                adminLoginModal.style.display = 'none';
+                adminLoginForm.reset();
+                setTimeout(() => { adminUploadModal.style.display = 'flex'; }, 300); 
+            } else {
+                showToast('Invalid credentials.', 'error');
             }
         });
 
-        // UPLOAD LOGIC
         adminUploadForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const fileInput = document.getElementById('excelFile');
-            const file = fileInput.files[0];
-            
-            if (!file) {
-                showToast('Please select a file first.', 'error');
-                return;
-            }
+            const file = document.getElementById('excelFile').files[0];
+            if (!file) { showToast('Select a file.', 'error'); return; }
 
             const formData = new FormData();
             formData.append('file', file);
-
+            
             const btn = document.getElementById('uploadBtn');
             const btnText = btn.querySelector('.btn-text');
             const loader = document.getElementById('uploadLoader');
+            btn.disabled = true; btnText.style.opacity = '0.5'; loader.style.display = 'block';
 
-            btn.disabled = true;
-            btnText.style.opacity = '0.5';
-            loader.style.display = 'block';
-
-            fetch('/upload_excel', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(result => {
-                if (result.success) {
-                    showToast(result.message, 'success');
+            fetch('/upload_excel', { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(res => {
+                if (res.success) {
+                    showToast(res.message, 'success');
                     adminUploadModal.style.display = 'none';
                     adminUploadForm.reset();
-                } else {
-                    showToast(result.message, 'error');
-                }
+                } else showToast(res.message, 'error');
             })
-            .catch(err => {
-                showToast('Failed to upload file. Please check your connection.', 'error');
-            })
-            .finally(() => {
-                btn.disabled = false;
-                btnText.style.opacity = '1';
-                loader.style.display = 'none';
-            });
+            .catch(() => showToast('Upload failed.', 'error'))
+            .finally(() => { btn.disabled = false; btnText.style.opacity = '1'; loader.style.display = 'none'; });
         });
 
         window.addEventListener('click', (e) => {
-            const gradeModal = document.getElementById('gradeModal');
-            if (e.target === gradeModal) gradeModal.style.display = 'none';
+            if (e.target === document.getElementById('gradeModal')) e.target.style.display = 'none';
             if (e.target === adminLoginModal) adminLoginModal.style.display = 'none';
             if (e.target === adminUploadModal) adminUploadModal.style.display = 'none';
         });

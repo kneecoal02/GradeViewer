@@ -394,3 +394,5 @@ input[type="file"]::file-selector-button:hover {
     background: #3f3f46;
     border-color: #6366f1;
 }
+.header-checkin { background-color: rgba(5, 150, 105, 0.3); color: #34d399; }
+.header-checkin-sub { background-color: rgba(5, 150, 105, 0.1); color: #6ee7b7; font-size: 12px; }

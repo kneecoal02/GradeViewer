@@ -4,3 +4,4 @@ __pycache__/
 ~$Grades.xlsx
 .env
 Grades.xlsx
+google_credentials.json
