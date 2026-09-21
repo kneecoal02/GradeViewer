@@ -78,8 +78,8 @@ def home():
 def get_grades():
     data = request.get_json()
     access_code = str(data.get('accessCode')).strip()
-    section = data.get('section')  # e.g., "BSIT2-8"
-    subject = data.get('subject')  # e.g., "ITE 300" or "ITE 031"
+    section = data.get('section')  # e.g., "BSIT2-4"
+    subject = data.get('subject')  # e.g., "ITE 031" or "ITE 300"
 
     if GSPREAD_CLIENT is None:
         return jsonify({'success': False, 'message': 'Database offline: Google Credentials missing.'}), 500
@@ -89,7 +89,7 @@ def get_grades():
         # Target format: Copy of Parel_OOP_F1-BSIT2-8
         target_filename = f"Copy of Parel_OOP_F1-{section}"
     else:
-        # Original format for all other subjects (e.g. Copy of Lampa_ITE 031_2-8)
+        # Original format for all other subjects (e.g. Copy of Lampa_ITE 031_2-4)
         section_suffix = section.replace("BSIT", "")
         target_filename = f"Copy of Lampa_{subject}_{section_suffix}"
 
@@ -101,7 +101,7 @@ def get_grades():
         try:
             worksheet = spreadsheet.worksheet("Grading Summary Sheet")
         except gspread.exceptions.WorksheetNotFound:
-            return jsonify({'success': False, 'message': 'Could not find a tab named "Grading Summary Sheet".'}), 404
+            return jsonify({'success': False, 'message': f'Access code not found in {section} {subject}'}), 404
         
         # 3. Pull all data and convert to pandas DataFrame
         data_records = worksheet.get_all_values()
@@ -116,7 +116,7 @@ def get_grades():
         student_row = df[access_code_col == user_code]
 
         if student_row.empty:
-            return jsonify({'success': False, 'message': f'Access code not found in {section}. Please verify.'}), 404
+            return jsonify({'success': False, 'message': f'Access code not found in {section} {subject}'}), 404
 
         # Full column mapping
         categories_config = [
@@ -136,7 +136,7 @@ def get_grades():
                 'columns': ['BL','BM','BN','BO','BP','BQ','BR','BS','BT','BU','BV','BW','BX','BY']
             },
             {
-                'name': 'Quizzes',
+                'name': 'Wrap Up',
                 'class_type': 'wrapup',
                 'columns': ['CC','CD','CE','CF','CG','CH','CI','CJ','CK','CL','CM','CN','CO','CP']
             },
@@ -240,7 +240,7 @@ def get_grades():
         })
 
     except gspread.exceptions.SpreadsheetNotFound:
-        return jsonify({'success': False, 'message': f'Server could not find the file: {target_filename}. Ensure it is shared with the bot email.'}), 404
+        return jsonify({'success': False, 'message': f'Access code not found in {section} {subject}'}), 404
     except Exception as e:
         return jsonify({'success': False, 'message': f'Server Exception: {str(e)}'}), 500
 
