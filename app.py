@@ -78,15 +78,20 @@ def home():
 def get_grades():
     data = request.get_json()
     access_code = str(data.get('accessCode')).strip()
-    section = data.get('section')  # e.g., "BSIT2-9"
-    subject = data.get('subject')  # e.g., "ITE 031"
+    section = data.get('section')  # e.g., "BSIT2-8"
+    subject = data.get('subject')  # e.g., "ITE 300" or "ITE 031"
 
     if GSPREAD_CLIENT is None:
         return jsonify({'success': False, 'message': 'Database offline: Google Credentials missing.'}), 500
 
-    # 1. Construct the Google Sheet File Name
-    section_suffix = section.replace("BSIT", "")
-    target_filename = f"Copy of Lampa_{subject}_{section_suffix}"
+    # 1. Construct the Google Sheet File Name dynamically
+    if subject == "ITE 300":
+        # Target format: Copy of Parel_OOP_F1-BSIT2-8
+        target_filename = f"Copy of Parel_OOP_F1-{section}"
+    else:
+        # Original format for all other subjects (e.g. Copy of Lampa_ITE 031_2-8)
+        section_suffix = section.replace("BSIT", "")
+        target_filename = f"Copy of Lampa_{subject}_{section_suffix}"
 
     try:
         # 2. Open the specific Google Sheet by name
