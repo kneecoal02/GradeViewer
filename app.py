@@ -1,16 +1,35 @@
-import os
 import pandas as pd
 from flask import Flask, render_template, request, jsonify
-from dotenv import load_dotenv
+
+# --- RATE LIMITER IMPORTS ---
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 # --- GOOGLE SHEETS IMPORTS ---
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
-load_dotenv()
-
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 
+
+# ==========================================
+# ROUTE-ONLY RATE LIMITER SETUP
+# ==========================================
+# setting default_limits=[] ensures NO global limits are applied
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=[],
+    storage_uri="memory://"
+)
+
+# Custom JSON response when a user hits a rate limit
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    return jsonify({
+        'success': False, 
+        'message': f'Too many requests. Please wait a moment and try again. ({e.description})'
+    }), 429
 
 # ==========================================
 # GOOGLE SHEETS SETUP
@@ -50,25 +69,12 @@ def col_to_index(col_str):
 
 @app.route('/')
 def home():
+    # Unlimited: Standard users loading the page will never be blocked
     return render_template('index.html')
 
 
-@app.route('/admin_login', methods=['POST'])
-def admin_login():
-    data = request.get_json()
-    username_attempt = data.get('username')
-    password_attempt = data.get('password')
-
-    correct_username = os.getenv('ADMIN_USERNAME')
-    correct_password = os.getenv('ADMIN_PASSWORD')
-
-    if username_attempt == correct_username and password_attempt == correct_password:
-        return jsonify(success=True, message="Login successful")
-    else:
-        return jsonify(success=False, message="Invalid username or password"), 401
-
-
 @app.route('/get_grades', methods=['POST'])
+@limiter.limit("10 per minute")  # Protects Google API quotas and prevents spam
 def get_grades():
     data = request.get_json()
     access_code = str(data.get('accessCode')).strip()
@@ -195,7 +201,7 @@ def get_grades():
                     'items': cat_items
                 })
 
-        # Extract Final Grades (Shifted to K, S, AB)
+        # Extract Final Grades (K, S, AB)
         final_grades = []
         for col_letter, title in [('K', 'P1 Grade'), ('S', 'P2 Grade'), ('AB', 'P3 Grade')]:
             idx = col_to_index(col_letter)
