@@ -136,7 +136,7 @@ def get_grades():
                 'columns': ['BL','BM','BN','BO','BP','BQ','BR','BS','BT','BU','BV','BW','BX','BY']
             },
             {
-                'name': 'Wrap Up',
+                'name': 'Quizzes',
                 'class_type': 'wrapup',
                 'columns': ['CC','CD','CE','CF','CG','CH','CI','CJ','CK','CL','CM','CN','CO','CP']
             },
