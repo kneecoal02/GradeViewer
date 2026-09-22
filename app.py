@@ -55,7 +55,7 @@ SUBJECT_TITLES = {
 }
 
 def col_to_index(col_str):
-    """Converts an Excel column letter (e.g., 'A', 'BG') to a 0-based index."""
+    """Converts an Excel column letter (e.g., 'A', 'DC') to a 0-based index."""
     expn = 0
     col_num = 0
     for char in reversed(col_str.upper()):
@@ -206,9 +206,9 @@ def get_grades():
                     'items': cat_items
                 })
 
-        # Extract Final Grades (K, S, AB)
+        # Extract Final Grades (DC: P1 Grade, DD: P2 Grade, DE: P3 Grade)
         final_grades = []
-        for col_letter, title in [('K', 'P1 Grade'), ('S', 'P2 Grade'), ('AB', 'P3 Grade')]:
+        for col_letter, title in [('DC', 'P1 Grade'), ('DD', 'P2 Grade'), ('DE', 'P3 Grade')]:
             idx = col_to_index(col_letter)
             if idx < len(df.columns):
                 val = student_row.iloc[0, idx]
