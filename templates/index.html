@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pro Student Gateway</title>
-    <!-- Loads all your separated styles from style.css -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
@@ -23,7 +22,6 @@
             <div class="form-group">
                 <label for="accessCode">Access Code</label>
                 <div class="input-wrapper">
-                    <!-- Added inline styles specifically to override position for icons so they don't break -->
                     <i class="ph ph-key" style="position: absolute; left: 15px; color: #a1a1aa; font-size: 20px;"></i>
                     <input type="password" id="accessCode" name="accessCode" placeholder="Enter unique access code" required autocomplete="off" style="padding-left: 45px;">
                     <i class="ph ph-eye toggle-password" id="togglePassword"></i>
@@ -94,7 +92,6 @@
     </div>
 
     <script>
-        // --- Show/Hide Password Toggle ---
         const togglePassword = document.getElementById('togglePassword');
         const accessCodeInput = document.getElementById('accessCode');
 
@@ -105,7 +102,6 @@
             this.classList.toggle('ph-eye-slash');
         });
 
-        // --- UI Feedback System ---
         function showToast(message, type = 'error') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
@@ -122,7 +118,6 @@
             }, 4000);
         }
 
-        // --- Helper: Determine Period Class by Number ---
         function getPeriodClass(subHeader, type = 'bg') {
             if (!subHeader) return `${type}-default`;
             const numMatch = subHeader.match(/[0-9]+/); 
@@ -136,7 +131,6 @@
             return `${type}-default`;
         }
 
-        // --- Main Form Submission Logic ---
         document.getElementById('entryForm').addEventListener('submit', async function(e) {
             e.preventDefault(); 
             
@@ -165,7 +159,7 @@
 
                 if (result.success) {
                     document.getElementById('modalStudentName').textContent = result.student_name;
-                    document.getElementById('modalCourseInfo').textContent = `${result.subject_full} • ${result.section}`;
+                    document.getElementById('modalCourseInfo').textContent = `${result.subject_full.split(' - ')[0]} • ${result.section}`;
                     
                     const container = document.getElementById('gradesContainer');
                     let htmlContent = '';
@@ -175,9 +169,9 @@
                     } else {
                         htmlContent += `
                             <div class="period-legend">
-                                <div class="legend-item"><span style="color: #60a5fa; font-size: 16px;">■</span> P1 - MODULE 1 TO 4</div>
-                                <div class="legend-item"><span style="color: #34d399; font-size: 16px;">■</span> P2 - MODULE 1 TO 9</div>
-                                <div class="legend-item"><span style="color: #a78bfa; font-size: 16px;">■</span> P3 - MODULE 1 TO 14</div>
+                                <div class="legend-item"><span style="color: #60a5fa; font-size: 16px;">■</span> P1 Module 1-4</div>
+                                <div class="legend-item"><span style="color: #34d399; font-size: 16px;">■</span> P2 Module 1-9</div>
+                                <div class="legend-item"><span style="color: #a78bfa; font-size: 16px;">■</span> P3 Module 1-14</div>
                             </div>
                         `;
 
@@ -255,7 +249,6 @@
             }
         });
 
-        // --- Modal Closing Logic ---
         document.querySelector('.close-btn').addEventListener('click', () => {
             document.getElementById('gradeModal').style.display = 'none';
         });
