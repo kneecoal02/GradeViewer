@@ -154,7 +154,7 @@ input::placeholder { color: #52525b; }
 }
 
 /* ---------------------------------------------------
-   Modal UI
+   Modal UI & Animations
 ------------------------------------------------------ */
 .modal-overlay {
     display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -172,6 +172,23 @@ input::placeholder { color: #52525b; }
 @keyframes popIn {
     from { transform: scale(0.95) translateY(10px); opacity: 0; }
     to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-overlay[style*="display: flex"] {
+    animation: fadeIn 0.3s ease-out forwards;
+}
+.modal-overlay[style*="display: flex"] .modal-content {
+    animation: slideUp 0.3s ease-out forwards;
 }
 
 .close-btn {
@@ -233,14 +250,15 @@ input::placeholder { color: #52525b; }
     width: max-content; min-width: 100%; border-collapse: separate; border-spacing: 0;
 }
 
-.grades-table-horizontal th, .grades-table-horizontal td {
-    padding: 14px 16px; border-bottom: 1px solid #27272a; border-right: 1px solid #27272a;
-    text-align: center; white-space: nowrap;
+.grades-table-horizontal th { padding: 10px; font-size: 12px; font-weight: 700; text-align: center; }
+
+.grades-table-horizontal td {
+    padding: 12px 10px; border-bottom: 1px solid #27272a; border-right: 1px solid rgba(255,255,255,0.02);
+    text-align: center; white-space: nowrap; background-color: #09090b; font-size: 14px; color: #d4d4d8;
 }
+
 .grades-table-horizontal th:last-child, .grades-table-horizontal td:last-child { border-right: none; }
 .grades-table-horizontal tr:last-child td { border-bottom: none; }
-
-.grades-table-horizontal td { background-color: #09090b; font-size: 14px; color: #d4d4d8; }
 .data-row:hover td:not(.sticky-col-right) { background-color: #18181b; }
 
 /* Sticky Right Column (Final Grade) */
@@ -262,99 +280,71 @@ input::placeholder { color: #52525b; }
 
 .text-bold { font-weight: 600; color: #fafafa !important; }
 .highlight-grade { font-size: 16px !important; color: #818cf8 !important; }
+.grade-cell { font-weight: 700; font-size: 14px; }
 
 /* ---------------------------------------------------
-   Period Color Styles & Legend
+   DYNAMIC COLOR CODING FOR PERIODS (P1, P2, P3)
 ------------------------------------------------------ */
+/* P1: Modules/Weeks 1 to 4 (Blue) */
+.color-p1 { color: #60a5fa !important; }
+.bg-p1 { background: rgba(96, 165, 250, 0.15) !important; color: #60a5fa !important; border-bottom: 2px solid rgba(96, 165, 250, 0.4) !important; }
+
+/* P2: Modules/Weeks 5 to 9 (Green) */
+.color-p2 { color: #34d399 !important; }
+.bg-p2 { background: rgba(52, 211, 153, 0.15) !important; color: #34d399 !important; border-bottom: 2px solid rgba(52, 211, 153, 0.4) !important; }
+
+/* P3: Modules/Weeks 10 to 14 (Purple) */
+.color-p3 { color: #a78bfa !important; }
+.bg-p3 { background: rgba(167, 139, 250, 0.15) !important; color: #a78bfa !important; border-bottom: 2px solid rgba(167, 139, 250, 0.4) !important; }
+
+/* Default for anything else */
+.color-default { color: #f4f4f5 !important; }
+.bg-default { background: rgba(255, 255, 255, 0.05) !important; color: #f4f4f5 !important; border-bottom: 2px solid rgba(255, 255, 255, 0.1) !important; }
+
+/* Legacy Period Colors (Keep for admin panel compatibility) */
 .th-p1 { color: #60a5fa !important; border-bottom: 2px solid #60a5fa !important; } 
 .th-p2 { color: #fbbf24 !important; border-bottom: 2px solid #fbbf24 !important; } 
 .th-p3 { color: #34d399 !important; border-bottom: 2px solid #34d399 !important; } 
-
 .td-p1 { background: rgba(96, 165, 250, 0.05); }
 .td-p2 { background: rgba(251, 191, 36, 0.05); }
 .td-p3 { background: rgba(52, 211, 153, 0.05); }
 
+/* Legend Styles */
 .period-legend {
-    display: flex;
-    gap: 20px;
-    font-size: 11px;
-    font-weight: 600;
-    color: #a1a1aa;
-    margin-bottom: 12px;
-    padding: 10px 14px;
+    display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;
+    font-size: 12px; font-weight: 700; color: #a1a1aa;
+    margin-bottom: 20px; padding: 12px;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 8px;
-    flex-wrap: wrap;
+    border-radius: 8px; letter-spacing: 0.5px;
 }
 .legend-item { display: flex; align-items: center; gap: 6px; }
-.dot-p1 { width: 8px; height: 8px; border-radius: 50%; background: #60a5fa; }
-.dot-p2 { width: 8px; height: 8px; border-radius: 50%; background: #fbbf24; }
-.dot-p3 { width: 8px; height: 8px; border-radius: 50%; background: #34d399; }
 
 /* ---------------------------------------------------
    Top Login Button & Modal
 ------------------------------------------------------ */
 .top-login-btn {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    background: rgba(24, 24, 27, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #e4e4e7;
-    padding: 10px 16px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.2s ease;
-    backdrop-filter: blur(8px);
-    z-index: 100;
+    position: absolute; top: 20px; right: 20px;
+    background: rgba(24, 24, 27, 0.6); border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #e4e4e7; padding: 10px 16px; border-radius: 8px; font-size: 14px;
+    font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px;
+    transition: all 0.2s ease; backdrop-filter: blur(8px); z-index: 100;
 }
-
-.top-login-btn:hover {
-    background: rgba(39, 39, 42, 0.9);
-    border-color: #6366f1;
-}
+.top-login-btn:hover { background: rgba(39, 39, 42, 0.9); border-color: #6366f1; }
 
 .login-modal-overlay {
-    display: none; 
-    position: fixed; 
-    top: 0; left: 0; width: 100%; height: 100%;
-    background-color: rgba(0, 0, 0, 0.6); 
-    backdrop-filter: blur(4px); 
-    -webkit-backdrop-filter: blur(4px);
-    justify-content: center; 
-    align-items: center; 
-    z-index: 1001; 
-    padding: 20px;
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    justify-content: center; align-items: center; z-index: 1001; padding: 20px;
 }
-
 .login-modal-content {
-    background-color: #18181b; 
-    border: 1px solid #27272a; 
-    padding: 30px;
-    border-radius: 16px; 
-    width: 100%; 
-    max-width: 350px; 
-    position: relative; 
-    animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8);
+    background-color: #18181b; border: 1px solid #27272a; padding: 30px;
+    border-radius: 16px; width: 100%; max-width: 350px; position: relative; 
+    animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8);
 }
-
 .login-close-btn {
-    position: absolute; 
-    top: 15px; 
-    right: 15px; 
-    background: none; 
-    border: none;
-    color: #71717a; 
-    font-size: 20px; 
-    cursor: pointer; 
-    transition: color 0.2s ease;
+    position: absolute; top: 15px; right: 15px; background: none; border: none;
+    color: #71717a; font-size: 20px; cursor: pointer; transition: color 0.2s ease;
 }
 .login-close-btn:hover { color: #f4f4f5; }
 
@@ -362,37 +352,15 @@ input::placeholder { color: #52525b; }
    File Upload Specifics
 ------------------------------------------------------ */
 .file-upload-wrapper {
-    border: 1px dashed #3f3f46; 
-    border-radius: 10px; 
-    padding: 20px; 
-    text-align: center; 
-    background: #18181b;
+    border: 1px dashed #3f3f46; border-radius: 10px; padding: 20px; text-align: center; background: #18181b;
 }
+input[type="file"] { width: 100%; color: #a1a1aa; font-size: 13px; font-family: inherit; }
 
-input[type="file"] {
-    width: 100%;
-    color: #a1a1aa;
-    font-size: 13px;
-    font-family: inherit;
-}
-
-/* Style the default "Choose File" button */
 input[type="file"]::file-selector-button {
-    background: #27272a;
-    border: 1px solid #3f3f46;
-    color: #f4f4f5;
-    padding: 8px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    margin-right: 15px;
-    font-family: inherit;
-    font-size: 13px;
+    background: #27272a; border: 1px solid #3f3f46; color: #f4f4f5; padding: 8px 12px;
+    border-radius: 6px; cursor: pointer; transition: all 0.2s ease; margin-right: 15px;
+    font-family: inherit; font-size: 13px;
 }
-
-input[type="file"]::file-selector-button:hover {
-    background: #3f3f46;
-    border-color: #6366f1;
-}
+input[type="file"]::file-selector-button:hover { background: #3f3f46; border-color: #6366f1; }
 .header-checkin { background-color: rgba(5, 150, 105, 0.3); color: #34d399; }
 .header-checkin-sub { background-color: rgba(5, 150, 105, 0.1); color: #6ee7b7; font-size: 12px; }

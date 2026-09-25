@@ -136,7 +136,7 @@ def get_grades():
                 'columns': ['BL','BM','BN','BO','BP','BQ','BR','BS','BT','BU','BV','BW','BX','BY']
             },
             {
-                'name': 'Wrap Up',
+                'name': 'Quizzes',
                 'class_type': 'wrapup',
                 'columns': ['CC','CD','CE','CF','CG','CH','CI','CJ','CK','CL','CM','CN','CO','CP']
             },
@@ -188,10 +188,14 @@ def get_grades():
                         else:
                             val = str(val)
                     
+                    # --- UPDATED HEADER LOGIC HERE ---
                     if 'headers' in cat:
                         sub_header = cat['headers'][i]
+                    elif cat['name'] == 'Attendance': 
+                        sub_header = f'Week {i+1}' # Forces Week 1, Week 2 for Attendance
                     else:
-                        sub_header = f'Mod {i+1}'
+                        sub_header = f'Mod {i+1}'  # Forces Mod 1, Mod 2 for everything else
+                    # ---------------------------------
 
                     cat_items.append({
                         'column': col_letter,
